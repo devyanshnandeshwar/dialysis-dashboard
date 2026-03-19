@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import dotenv from 'dotenv';
 import connectDB from './config/db';
 import patientRoutes from './routes/patientRoutes';
+import sessionRoutes from './routes/sessionRoutes';
 import errorHandler from './middleware/errorHandler';
 
 dotenv.config();
@@ -21,6 +22,7 @@ app.get('/api/health', (req, res) => {
 
 // Routes
 app.use('/api/patients', patientRoutes);
+app.use('/api/sessions', sessionRoutes);
 
 // Global error handler (must be after routes)
 app.use(errorHandler);
