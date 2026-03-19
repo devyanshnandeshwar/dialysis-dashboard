@@ -3,6 +3,8 @@ import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
 import connectDB from './config/db';
+import patientRoutes from './routes/patientRoutes';
+import errorHandler from './middleware/errorHandler';
 
 dotenv.config();
 
@@ -16,6 +18,12 @@ app.use(express.json());
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
 });
+
+// Routes
+app.use('/api/patients', patientRoutes);
+
+// Global error handler (must be after routes)
+app.use(errorHandler);
 
 connectDB().then(() => {
   app.listen(PORT, () => {
