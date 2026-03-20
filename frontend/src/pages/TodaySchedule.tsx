@@ -20,8 +20,6 @@ export default function TodaySchedule() {
     try {
       setLoading(true);
       const data = await getTodaySessions();
-      // Keep only backend sorting, or fallback locally if needed:
-      // data.sort((a, b) => (a.queuePosition || 0) - (b.queuePosition || 0));
       setSessions(data);
     } catch {
       toast.error('Failed to load today\'s sessions');
@@ -34,41 +32,39 @@ export default function TodaySchedule() {
     fetchSessions();
   }, [fetchSessions]);
 
-  const handleMoveUp = async (id: string, currentPos: number) => {
-    if (currentPos <= 1) return;
-    await handleReorder(id, 'up');
+  const handleMoveUp = async (id: string, index: number) => {
+    if (index === 0) return;
+    await handleReorder(id, 'up', index, index - 1);
   };
 
-  const handleMoveDown = async (id: string) => {
-    await handleReorder(id, 'down');
+  const handleMoveDown = async (id: string, index: number) => {
+    if (index === sessions.length - 1) return;
+    await handleReorder(id, 'down', index, index + 1);
   };
 
-  const handleReorder = async (id: string, direction: 'up' | 'down') => {
+  const handleReorder = async (
+    id: string, 
+    direction: 'up' | 'down', 
+    currentIndex: number, 
+    targetIndex: number
+  ) => {
     try {
       setMovingSessionId(id);
       
-      // Optimistic UI update (swap)
+      // Optimistic visual swap via array index
       setSessions(prev => {
         const cloned = [...prev];
-        const targetIdx = cloned.findIndex(s => s._id === id);
-        if (targetIdx === -1) return prev;
-        
-        const currentPos = cloned[targetIdx].queuePosition || 0;
-        const targetPos = direction === 'up' ? currentPos - 1 : currentPos + 1;
-        
-        const adjacentIdx = cloned.findIndex(s => s.queuePosition === targetPos);
-        
-        if (adjacentIdx !== -1) {
-            cloned[adjacentIdx].queuePosition = currentPos;
-            cloned[targetIdx].queuePosition = targetPos;
-        }
-        
-        return cloned.sort((a, b) => (a.queuePosition || 999) - (b.queuePosition || 999));
+        const temp = cloned[currentIndex];
+        cloned[currentIndex] = cloned[targetIndex];
+        cloned[targetIndex] = temp;
+        return cloned;
       });
 
-      // API call
+      // Background API call
       const updatedSchedule = await updateQueuePosition(id, direction);
-      setSessions(updatedSchedule); // Sync with source of truth
+      
+      // Re-sync with server source of truth to ensure queuePosition fields match
+      setSessions(updatedSchedule);
     } catch {
       toast.error('Failed to reorder session');
       fetchSessions(); // Revert on failure
@@ -86,10 +82,7 @@ export default function TodaySchedule() {
     }));
   };
 
-  // Ensure sessions are sorted by queuePosition locally before filtering
-  const sortedSessions = [...sessions].sort((a, b) => (a.queuePosition || 999) - (b.queuePosition || 999));
-
-  const filtered = sortedSessions.filter((s) => {
+  const filtered = sessions.filter((s) => {
     if (filter === 'anomalies') return s.anomalies.length > 0;
     if (filter === 'in_progress') return s.status === 'in_progress';
     return true;
@@ -105,7 +98,7 @@ export default function TodaySchedule() {
   const anomalyCount = sessions.filter((s) => s.anomalies.length > 0).length;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-5xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -176,16 +169,17 @@ export default function TodaySchedule() {
           </p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-3 flex flex-col relative w-full">
           {filtered.map((session, index) => (
             <SessionCard 
               key={session._id} 
               session={session} 
+              sequenceNumber={index + 1}
               isFirst={index === 0}
               isLast={index === filtered.length - 1}
               isMoving={movingSessionId === session._id}
-              onMoveUp={handleMoveUp}
-              onMoveDown={() => handleMoveDown(session._id)}
+              onMoveUp={() => handleMoveUp(session._id, index)}
+              onMoveDown={() => handleMoveDown(session._id, index)}
               onPatientUpdated={handlePatientUpdated}
             />
           ))}
