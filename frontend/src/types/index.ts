@@ -19,6 +19,12 @@ export interface Patient {
   assignedUnit?: string;
   createdAt: string;
   updatedAt: string;
+  totalSessions?: number;
+  lastSession?: {
+    date: string;
+    status: 'not_started' | 'in_progress' | 'completed';
+  } | null;
+  lastAnomalies?: Anomaly[];
 }
 
 export interface DialysisSession {

@@ -7,6 +7,7 @@ import {
   updateNurseNotes,
   getSessionById,
   reorderQueue,
+  getPaginatedSessions,
 } from '../controllers/sessionController';
 
 const router = Router();
@@ -24,6 +25,11 @@ router.post(
   ]),
   createSession
 );
+
+/**
+ * GET /api/sessions — list sessions with optional pagination/filtering
+ */
+router.get('/', getPaginatedSessions);
 
 /**
  * GET /api/sessions/today — today's sessions

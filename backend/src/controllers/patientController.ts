@@ -38,8 +38,36 @@ export const getPatients = async (
   next: NextFunction
 ) => {
   try {
-    const patients = await Patient.find().sort({ createdAt: -1 });
-    res.json(patients);
+    const patients = await Patient.find().sort({ createdAt: -1 }).lean();
+    
+    // Get session stats per patient
+    const stats = await DialysisSession.aggregate([
+      { $sort: { scheduledDate: -1, createdAt: -1 } },
+      {
+        $group: {
+          _id: '$patientId',
+          totalSessions: { $sum: 1 },
+          lastSessionDetails: { $first: '$$ROOT' },
+        },
+      },
+    ]);
+
+    const statsMap = new Map(stats.map(s => [s._id.toString(), s]));
+
+    const enrichedPatients = patients.map(p => {
+      const pStats = statsMap.get(p._id.toString());
+      return {
+        ...p,
+        totalSessions: pStats?.totalSessions || 0,
+        lastSession: pStats ? {
+          date: pStats.lastSessionDetails.scheduledDate,
+          status: pStats.lastSessionDetails.status,
+        } : null,
+        lastAnomalies: pStats?.lastSessionDetails.anomalies || [],
+      };
+    });
+
+    res.json(enrichedPatients);
   } catch (err) {
     next(err);
   }

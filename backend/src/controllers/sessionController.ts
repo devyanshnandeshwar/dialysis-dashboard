@@ -223,3 +223,42 @@ export const reorderQueue = async (
     next(err);
   }
 };
+
+/**
+ * GET /api/sessions — list sessions with pagination
+ * Query: patientId (optional), page (default 1), limit (default 5)
+ */
+export const getPaginatedSessions = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { patientId, page = '1', limit = '5' } = req.query;
+
+    const query: Record<string, any> = {};
+    if (patientId) query.patientId = patientId;
+
+    const pageNum = parseInt(page as string, 10) || 1;
+    const limitNum = parseInt(limit as string, 10) || 5;
+    const skip = (pageNum - 1) * limitNum;
+
+    const [sessions, total] = await Promise.all([
+      DialysisSession.find(query)
+        .sort({ scheduledDate: -1, createdAt: -1 })
+        .skip(skip)
+        .limit(limitNum)
+        .populate('patientId', 'name mrn dryWeight'),
+      DialysisSession.countDocuments(query),
+    ]);
+
+    res.json({
+      sessions,
+      total,
+      page: pageNum,
+      totalPages: Math.ceil(total / limitNum),
+    });
+  } catch (err) {
+    next(err);
+  }
+};

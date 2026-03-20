@@ -37,3 +37,10 @@ export const updateQueuePosition = async (
   });
   return data;
 };
+
+export const getPaginatedSessions = async (
+  params: { patientId?: string; page?: number; limit?: number } = {}
+): Promise<{ sessions: DialysisSession[]; total: number; page: number; totalPages: number }> => {
+  const { data } = await client.get('/sessions', { params });
+  return data;
+};

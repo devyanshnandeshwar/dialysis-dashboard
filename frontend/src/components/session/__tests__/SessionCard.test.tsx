@@ -32,7 +32,7 @@ const baseSession: DialysisSession = {
 function renderCard(session: DialysisSession) {
   return render(
     <BrowserRouter>
-      <SessionCard session={session} />
+      <SessionCard session={session} sequenceNumber={1} />
     </BrowserRouter>
   );
 }
@@ -56,7 +56,7 @@ describe('SessionCard', () => {
       ],
     };
     renderCard(session);
-    expect(screen.getByText('High BP')).toBeDefined();
+    expect(screen.getByText('HIGH POST BP')).toBeDefined();
   });
 
   it('shows no anomaly badges when anomalies array is empty', () => {
