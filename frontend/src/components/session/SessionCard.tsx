@@ -172,7 +172,7 @@ const SessionCard = React.memo(function SessionCard({
             {session.anomalies.length > 0 ? (
               session.anomalies.map((anom, i) => (
                 <div key={i} className={`text-[11px] font-bold px-2 py-0.5 rounded border whitespace-nowrap w-full text-center truncate ${anom.severity === 'critical' ? 'bg-critical/10 text-critical border-critical/30' : 'bg-warning/10 text-warning border-warning/30'}`} title={anom.message}>
-                  {anom.type.replace('_', ' ').toUpperCase()}
+                  {anom.type.replace(/_/g, ' ').toUpperCase()}
                 </div>
               ))
             ) : (
