@@ -2,176 +2,161 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import Patient from '../models/Patient';
 import DialysisSession from '../models/Session';
-import anomalyConfig from '../config/anomalyConfig';
-import detectAnomalies from '../utils/anomalyDetector';
 
 dotenv.config();
 
-const patients = [
-  {
+export const seedDatabase = async () => {
+  await Patient.deleteMany({});
+  await DialysisSession.deleteMany({});
+
+  const john = await Patient.create({
     name: 'John Carter',
     mrn: 'MRN-001',
     dryWeight: 72,
     dateOfBirth: new Date('1965-03-15'),
-    primaryDiagnosis: 'Chronic Kidney Disease Stage 5',
+    primaryDiagnosis: 'End-Stage Renal Disease',
     assignedUnit: 'Unit A',
-  },
-  {
+  });
+
+  const maria = await Patient.create({
     name: 'Maria Santos',
     mrn: 'MRN-002',
     dryWeight: 65,
-    dateOfBirth: new Date('1978-07-22'),
-    primaryDiagnosis: 'Diabetic Nephropathy',
+    dateOfBirth: new Date('1972-07-22'),
+    primaryDiagnosis: 'Chronic Kidney Disease',
     assignedUnit: 'Unit A',
-  },
-  {
+  });
+
+  const david = await Patient.create({
     name: 'David Okafor',
     mrn: 'MRN-003',
     dryWeight: 88,
-    dateOfBirth: new Date('1960-11-04'),
-    primaryDiagnosis: 'Hypertensive Nephrosclerosis',
+    dateOfBirth: new Date('1958-11-08'),
+    primaryDiagnosis: 'Diabetic Nephropathy',
     assignedUnit: 'Unit B',
-  },
-  {
+  });
+
+  const priya = await Patient.create({
     name: 'Priya Nair',
     mrn: 'MRN-004',
     dryWeight: 58,
-    dateOfBirth: new Date('1985-01-30'),
-    primaryDiagnosis: 'Polycystic Kidney Disease',
+    dateOfBirth: new Date('1980-01-30'),
+    primaryDiagnosis: 'Hypertensive Nephropathy',
     assignedUnit: 'Unit B',
-  },
-  {
+  });
+
+  const robert = await Patient.create({
     name: 'Robert Chen',
     mrn: 'MRN-005',
     dryWeight: 79,
-    dateOfBirth: new Date('1972-09-18'),
-    primaryDiagnosis: 'Glomerulonephritis',
-    assignedUnit: 'Unit A',
-  },
-];
+    dateOfBirth: new Date('1969-09-14'),
+    primaryDiagnosis: 'Polycystic Kidney Disease',
+    assignedUnit: 'Unit C',
+  });
 
-const seed = async () => {
+  const today = new Date();
+  today.setHours(12, 0, 0, 0);
+
+  await DialysisSession.create({
+    patientId: john._id,
+    scheduledDate: today,
+    status: 'in_progress',
+    machineId: 'HD-01',
+    queuePosition: 1,
+    preWeight: 75,
+    postWeight: null,
+    preBloodPressure: { systolic: 145, diastolic: 88 },
+    postBloodPressure: { systolic: 165, diastolic: 95 },
+    sessionDurationMinutes: 200,
+    targetDurationMinutes: 240,
+    nurseNotes: '',
+    anomalies: [],
+  });
+
+  await DialysisSession.create({
+    patientId: maria._id,
+    scheduledDate: today,
+    status: 'completed',
+    machineId: 'HD-02',
+    queuePosition: 2,
+    preWeight: 66.5,
+    postWeight: 65,
+    preBloodPressure: { systolic: 130, diastolic: 80 },
+    postBloodPressure: { systolic: 125, diastolic: 78 },
+    sessionDurationMinutes: 235,
+    targetDurationMinutes: 240,
+    nurseNotes: 'Session completed without issues.',
+    anomalies: [],
+  });
+
+  await DialysisSession.create({
+    patientId: david._id,
+    scheduledDate: today,
+    status: 'not_started',
+    machineId: 'HD-03',
+    queuePosition: 3,
+    postWeight: null,
+    postBloodPressure: null,
+    sessionDurationMinutes: null,
+    targetDurationMinutes: 240,
+    nurseNotes: '',
+    anomalies: [],
+  });
+
+  await DialysisSession.create({
+    patientId: priya._id,
+    scheduledDate: today,
+    status: 'in_progress',
+    machineId: 'HD-04',
+    queuePosition: 4,
+    preWeight: 59.5,
+    postWeight: null,
+    preBloodPressure: { systolic: 128, diastolic: 76 },
+    postBloodPressure: { systolic: 132, diastolic: 80 },
+    sessionDurationMinutes: 180,
+    targetDurationMinutes: 240,
+    nurseNotes: '',
+    anomalies: [],
+  });
+
+  await DialysisSession.create({
+    patientId: robert._id,
+    scheduledDate: today,
+    status: 'not_started',
+    machineId: 'HD-05',
+    queuePosition: 5,
+    postWeight: null,
+    postBloodPressure: null,
+    sessionDurationMinutes: null,
+    targetDurationMinutes: 240,
+    nurseNotes: '',
+    anomalies: [],
+  });
+
+  console.log('✅ Database seeded successfully');
+};
+
+const runSeedScript = async () => {
+  const mongoURI = process.env.MONGO_URI;
+  if (!mongoURI) {
+    throw new Error('MONGO_URI is not defined in environment variables');
+  }
+
+  await mongoose.connect(mongoURI);
+  console.log('MongoDB connected for seeding');
+
   try {
-    const mongoURI = process.env.MONGO_URI;
-    if (!mongoURI) {
-      throw new Error('MONGO_URI is not defined in environment variables');
-    }
-
-    await mongoose.connect(mongoURI);
-    console.log('MongoDB connected for seeding');
-
-    // Clear existing data
-    await DialysisSession.deleteMany({});
-    await Patient.deleteMany({});
-    console.log('Cleared existing patients and sessions');
-
-    // Insert patients
-    const createdPatients = await Patient.insertMany(patients);
-    console.log(`Seeded ${createdPatients.length} patients:`);
-    createdPatients.forEach((p) => console.log(`  - ${p.name} (${p.mrn})`));
-
-    // Build a lookup by MRN
-    const byMrn = (mrn: string) => {
-      const p = createdPatients.find((pt) => pt.mrn === mrn);
-      if (!p) throw new Error(`Patient ${mrn} not found`);
-      return p;
-    };
-
-    const today = new Date();
-    today.setHours(9, 0, 0, 0); // 9AM today
-
-    // --- Session data for today ---
-    const sessionInputs = [
-      {
-        // John Carter: in_progress, weight anomaly (gain 3kg) + BP anomaly (165/95)
-        patientId: byMrn('MRN-001')._id,
-        scheduledDate: today,
-        status: 'in_progress' as const,
-        machineId: 'HD-01',
-        nurseId: 'N-201',
-        preWeight: 75, // gain = 75 - 72 = 3kg → critical (> 2 * 1.5)
-        postWeight: 72.5,
-        preBloodPressure: { systolic: 145, diastolic: 88 },
-        postBloodPressure: { systolic: 165, diastolic: 95 }, // > 160 → critical
-        sessionDurationMinutes: 200,
-        targetDurationMinutes: 240,
-        nurseNotes: 'Patient reports mild headache during session.',
-      },
-      {
-        // Maria Santos: completed, all normal values
-        patientId: byMrn('MRN-002')._id,
-        scheduledDate: today,
-        status: 'completed' as const,
-        machineId: 'HD-02',
-        nurseId: 'N-202',
-        preWeight: 66.5, // gain = 1.5kg → normal
-        postWeight: 65,
-        preBloodPressure: { systolic: 130, diastolic: 80 },
-        postBloodPressure: { systolic: 125, diastolic: 78 },
-        sessionDurationMinutes: 235,
-        targetDurationMinutes: 240,
-        nurseNotes: 'Uneventful session. Patient tolerated well.',
-      },
-      {
-        // David Okafor: not_started
-        patientId: byMrn('MRN-003')._id,
-        scheduledDate: today,
-        status: 'not_started' as const,
-        machineId: 'HD-03',
-        nurseId: 'N-203',
-        targetDurationMinutes: 240,
-      },
-      {
-        // Priya Nair: in_progress, short session anomaly (180 < 240 - 30)
-        patientId: byMrn('MRN-004')._id,
-        scheduledDate: today,
-        status: 'in_progress' as const,
-        machineId: 'HD-04',
-        nurseId: 'N-201',
-        preWeight: 59.5, // gain = 1.5kg → normal
-        postWeight: 58.2,
-        preBloodPressure: { systolic: 128, diastolic: 76 },
-        postBloodPressure: { systolic: 132, diastolic: 80 },
-        sessionDurationMinutes: 180, // 180 < 240 - 30 = 210 → short_session warning
-        targetDurationMinutes: 240,
-        nurseNotes: 'Session shortened due to patient discomfort.',
-      },
-      {
-        // Robert Chen: not_started
-        patientId: byMrn('MRN-005')._id,
-        scheduledDate: today,
-        status: 'not_started' as const,
-        machineId: 'HD-05',
-        nurseId: 'N-204',
-        targetDurationMinutes: 240,
-      },
-    ];
-
-    // Run anomaly detection on each session before inserting
-    const sessionsToInsert = sessionInputs.map((input, index) => {
-      const patient = createdPatients.find(
-        (p) => p._id.toString() === input.patientId.toString()
-      )!;
-      const anomalies = detectAnomalies(input, patient, anomalyConfig);
-      return { ...input, anomalies, queuePosition: index + 1 };
-    });
-
-    const createdSessions = await DialysisSession.insertMany(sessionsToInsert);
-    console.log(`\nSeeded ${createdSessions.length} sessions for today:`);
-    createdSessions.forEach((s) => {
-      const anomalyCount = s.anomalies.length;
-      console.log(
-        `  - ${s.status.padEnd(12)} | Machine ${s.machineId || 'N/A'} | ${anomalyCount} anomal${anomalyCount === 1 ? 'y' : 'ies'}`
-      );
-    });
-
+    await seedDatabase();
+  } finally {
     await mongoose.disconnect();
-    console.log('\nSeeding complete');
-    process.exit(0);
-  } catch (err) {
-    console.error('Seeding failed:', err);
-    process.exit(1);
   }
 };
 
-seed();
+if (require.main === module) {
+  runSeedScript()
+    .then(() => process.exit(0))
+    .catch((err) => {
+      console.error('Seeding failed:', err);
+      process.exit(1);
+    });
+}

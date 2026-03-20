@@ -27,27 +27,27 @@ interface VitalsDisplayProps {
 
 function VitalsDisplay({ session, isNotStarted }: VitalsDisplayProps) {
   return (
-    <div className="hidden lg:flex shrink-0 items-center justify-center gap-6 px-6 border-l border-border-subtle">
-      <div className="flex flex-col gap-1 w-24">
-        <div className="flex items-center gap-1.5 text-[10px] text-text-muted font-bold tracking-widest uppercase">
+    <div className="hidden lg:flex shrink-0 items-center px-6 border-l border-border-subtle">
+      <div className="flex flex-col gap-1 w-32 text-center items-center">
+        <div className="flex items-center justify-center gap-1.5 text-[10px] text-text-muted font-bold tracking-widest uppercase">
           <Weight className="w-3.5 h-3.5 text-text-muted opacity-80" /> WEIGHT
         </div>
-        <div className="text-sm font-medium text-text-primary">
+        <div className="text-sm font-medium text-text-primary text-center">
           {isNotStarted ? '—' : (
-            <span className="flex items-center gap-1">
+            <span className="flex items-center justify-center gap-1">
               {session.preWeight ?? '—'} <span className="text-text-muted text-xs mx-0.5">→</span> {session.postWeight ?? '—'}
             </span>
           )}
         </div>
       </div>
 
-      <div className="flex flex-col gap-1 w-36 border-l border-border-subtle pl-6">
-        <div className="flex items-center gap-1.5 text-[10px] text-text-muted font-bold tracking-widest uppercase">
+      <div className="flex flex-col gap-1 w-32 text-center items-center border-l border-border-subtle pl-4">
+        <div className="flex items-center justify-center gap-1.5 text-[10px] text-text-muted font-bold tracking-widest uppercase">
           <HeartPulse className="w-3.5 h-3.5 text-text-muted opacity-80" /> BP
         </div>
-        <div className="text-sm font-medium text-text-primary">
+        <div className="text-sm font-medium text-text-primary text-center">
           {isNotStarted ? '—' : (
-            <span className="flex items-center gap-1">
+            <span className="flex items-center justify-center gap-1">
               {session.preBloodPressure ? `${session.preBloodPressure.systolic}/${session.preBloodPressure.diastolic}` : '—'}
               <span className="text-text-muted text-xs mx-0.5">→</span>
               {session.postBloodPressure ? `${session.postBloodPressure.systolic}/${session.postBloodPressure.diastolic}` : '—'}
@@ -56,11 +56,11 @@ function VitalsDisplay({ session, isNotStarted }: VitalsDisplayProps) {
         </div>
       </div>
 
-      <div className="flex flex-col gap-1 w-24 border-l border-border-subtle pl-6">
-        <div className="flex items-center gap-1.5 text-[10px] text-text-muted font-bold tracking-widest uppercase">
+      <div className="flex flex-col gap-1 w-32 text-center items-center border-l border-border-subtle pl-4">
+        <div className="flex items-center justify-center gap-1.5 text-[10px] text-text-muted font-bold tracking-widest uppercase">
           <Clock className="w-3.5 h-3.5 text-text-muted opacity-80" /> DURATION
         </div>
-        <div className="text-sm font-medium text-text-primary">
+        <div className="text-sm font-medium text-text-primary text-center">
           {isNotStarted ? '—' : `${session.sessionDurationMinutes ?? '—'} / ${session.targetDurationMinutes}m`}
         </div>
       </div>
@@ -119,7 +119,10 @@ const SessionCard = React.memo(function SessionCard({
   const [expanded, setExpanded] = useState(false);
   const [currentNotes, setCurrentNotes] = useState(session.nurseNotes || '');
   const [starting, setStarting] = useState(false);
-  const patient = session.patientId as Patient;
+  const patient =
+    typeof session.patientId === 'object' ? (session.patientId as Patient) : null;
+  const patientName = patient?.name || 'Unknown Patient';
+  const patientMrn = patient?.mrn || '—';
 
   // Track previous position for flip animation
   const cardRef = useRef<HTMLDivElement>(null);
@@ -179,14 +182,16 @@ const SessionCard = React.memo(function SessionCard({
       <CardContent className="p-0">
         {onPatientUpdated && (
           <div className="absolute right-2 top-2 z-20">
-            <EditPatientModal
-              patient={patient}
-              onPatientUpdated={(updated) => onPatientUpdated(patient._id, updated)}
-            />
+            {patient ? (
+              <EditPatientModal
+                patient={patient}
+                onPatientUpdated={(updated) => onPatientUpdated(patient._id, updated)}
+              />
+            ) : null}
           </div>
         )}
 
-        <div className="flex w-full items-stretch min-h-24 overflow-hidden">
+        <div className="flex w-full items-center min-h-24 overflow-hidden">
 
           {/* Queue Left Fixed Section */}
           <div className="w-12 sm:w-16 flex flex-col items-center justify-center border-r border-border bg-surface-alt/10 py-2 shrink-0">
@@ -216,16 +221,18 @@ const SessionCard = React.memo(function SessionCard({
           </div>
 
           {/* Main Content Area */}
-          <div className="flex-1 flex flex-col justify-center p-3 sm:p-4 min-w-0 pb-3">
+          <div className="flex-1 flex flex-col justify-center p-3 sm:p-4 min-w-0 pb-3 self-stretch">
             {/* Row 1: Name + Status */}
-            <div className="flex items-center gap-2 sm:gap-3 min-w-0 pr-1">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0 pr-1 flex-nowrap">
               <h3 className="text-base font-semibold text-text-primary truncate">
-                {patient.name}
+                {patientName}
               </h3>
-              <StatusBadge status={session.status} />
+              <div className="shrink-0 whitespace-nowrap">
+                <StatusBadge status={session.status} />
+              </div>
               {session.machineId && !isCompleted && (
                 <span
-                  className={`inline-flex items-center gap-1 text-[11px] font-mono font-semibold px-2 py-0.5 rounded ml-auto shrink-0 border tracking-wide ${isInProgress
+                  className={`inline-flex items-center gap-1 text-[11px] font-mono font-semibold px-2 py-0.5 rounded ml-auto shrink-0 border tracking-wide whitespace-nowrap ${isInProgress
                     ? 'bg-accent-glow text-accent border-border'
                     : 'bg-surface-alt text-text-secondary border-border-subtle'
                     }`}
@@ -239,7 +246,7 @@ const SessionCard = React.memo(function SessionCard({
             {/* Row 2: MRN + Reg Time */}
             <div className="flex items-center gap-2 mt-2 text-[11px] text-text-muted tracking-wide uppercase font-medium">
               <span className="text-text-secondary">
-                {patient.mrn}
+                {patientMrn}
               </span>
               <span className="text-border-subtle">•</span>
               <span>Reg {formatTime(session.createdAt)}</span>

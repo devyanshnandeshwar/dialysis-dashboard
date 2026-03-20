@@ -34,6 +34,13 @@ app.use(errorHandler);
 const startServer = async () => {
   await connectDB();
 
+  if (process.env.NODE_ENV === 'development') {
+    const { seedDatabase } = require('./scripts/seed') as {
+      seedDatabase: () => Promise<void>;
+    };
+    await seedDatabase();
+  }
+
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
     console.log(

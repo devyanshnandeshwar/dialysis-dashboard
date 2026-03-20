@@ -11,24 +11,22 @@ export const getMachines = async (
     try {
         const { start: startOfDay, end: endOfDay } = getTodayRange();
 
-        const activeToday = await DialysisSession.find(
+        const activeSessions = await DialysisSession.find(
             {
                 scheduledDate: { $gte: startOfDay, $lte: endOfDay },
                 status: { $in: ['not_started', 'in_progress'] },
-                machineId: { $exists: true, $ne: null },
+                machineId: { $ne: null },
             },
             { machineId: 1 }
         ).lean();
 
-        const inUseMachineIds = new Set(
-            activeToday
-                .map((session) => session.machineId)
-                .filter((machineId): machineId is string => Boolean(machineId))
-        );
+        const inUseMachineIds = activeSessions
+            .map((session) => session.machineId)
+            .filter((machineId): machineId is string => Boolean(machineId));
 
         const machines = MACHINES.map((machine) => ({
             ...machine,
-            status: inUseMachineIds.has(machine.id) ? 'in_use' : 'available',
+            status: inUseMachineIds.includes(machine.id) ? 'in_use' : 'available',
         }));
 
         res.json({ machines });
