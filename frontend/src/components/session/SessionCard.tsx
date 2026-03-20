@@ -5,7 +5,7 @@ import StatusBadge from '@/components/ui/StatusBadge';
 import NotesEditor from '@/components/session/NotesEditor';
 import CompleteSessionModal from '@/components/session/CompleteSessionModal';
 import EditPatientModal from '@/components/patient/EditPatientModal';
-import { Weight, HeartPulse, Clock, ChevronDown, ChevronUp, Loader2, AlertTriangle } from 'lucide-react';
+import { Weight, HeartPulse, Clock, ChevronDown, ChevronUp, Loader2, AlertTriangle, Cpu } from 'lucide-react';
 import { startSession } from '@/api/sessions';
 import { toast } from 'sonner';
 import type { DialysisSession, Patient } from '@/types';
@@ -150,8 +150,14 @@ const SessionCard = React.memo(function SessionCard({
                 {patient.name}
               </h3>
               <StatusBadge status={session.status} />
-              {session.machineId && (
-                <span className="text-[11px] font-mono text-text-secondary font-medium bg-surface-alt px-1.5 py-0.5 rounded ml-auto shrink-0 border border-border-subtle tracking-wide">
+              {session.machineId && !isCompleted && (
+                <span
+                  className={`inline-flex items-center gap-1 text-[11px] font-mono font-semibold px-2 py-0.5 rounded ml-auto shrink-0 border tracking-wide ${isInProgress
+                    ? 'bg-accent-glow text-accent border-border'
+                    : 'bg-surface-alt text-text-secondary border-border-subtle'
+                    }`}
+                >
+                  <Cpu className="w-3 h-3" />
                   {session.machineId}
                 </span>
               )}
