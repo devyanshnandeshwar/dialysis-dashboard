@@ -2,9 +2,9 @@ import { IAnomaly } from '../models/Session';
 
 interface SessionData {
   preWeight?: number;
-  postWeight?: number;
-  postBloodPressure?: { systolic: number; diastolic: number };
-  sessionDurationMinutes?: number;
+  postWeight?: number | null;
+  postBloodPressure?: { systolic: number; diastolic: number } | null;
+  sessionDurationMinutes?: number | null;
   targetDurationMinutes: number;
 }
 
@@ -20,8 +20,12 @@ interface AnomalyConfig {
 }
 
 /**
- * Pure function — detects clinical anomalies for a dialysis session.
- * Returns an array of anomaly objects to be stored on the session document.
+ * Detects clinical anomalies for a dialysis session using configured thresholds.
+ *
+ * @param session - Session vitals and duration data used for anomaly checks.
+ * @param patient - Patient baseline data (currently dry weight).
+ * @param config - Threshold values used by anomaly detection rules.
+ * @returns Array of anomaly descriptors. Empty when no anomalies are detected.
  */
 const detectAnomalies = (
   session: SessionData,

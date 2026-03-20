@@ -115,6 +115,13 @@ export default function AddSessionModal({
     setErrors({});
   };
 
+  const handleOpenChange = (nextOpen: boolean) => {
+    setOpen(nextOpen);
+    if (!nextOpen) {
+      resetForm();
+    }
+  };
+
   const handleSubmit = async () => {
     if (!validate()) return;
     setSubmitting(true);
@@ -155,7 +162,7 @@ export default function AddSessionModal({
     'bg-bg border-border text-text-primary text-sm placeholder:text-text-muted focus-visible:border-accent focus-visible:ring-1 focus-visible:ring-accent-glow h-9';
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button
           size="sm"

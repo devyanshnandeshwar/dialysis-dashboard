@@ -36,6 +36,22 @@ export default function CompleteSessionModal({
     const [sessionDurationMinutes, setSessionDurationMinutes] = useState('');
     const [nurseNotes, setNurseNotes] = useState('');
 
+    const resetForm = () => {
+        setPostWeight('');
+        setPostBpSystolic('');
+        setPostBpDiastolic('');
+        setSessionDurationMinutes('');
+        setNurseNotes('');
+        setErrors({});
+    };
+
+    const handleOpenChange = (nextOpen: boolean) => {
+        setOpen(nextOpen);
+        if (!nextOpen) {
+            resetForm();
+        }
+    };
+
     const fieldClass =
         'bg-bg border-border text-text-primary text-sm placeholder:text-text-muted focus-visible:border-accent focus-visible:ring-1 focus-visible:ring-accent-glow h-9';
 
@@ -81,6 +97,7 @@ export default function CompleteSessionModal({
                 toast.success('Session completed — no anomalies');
             }
 
+            resetForm();
             setOpen(false);
             await onCompleted();
         } catch {
@@ -91,7 +108,7 @@ export default function CompleteSessionModal({
     };
 
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
                 <Button size="sm" className="bg-accent text-white hover:brightness-110 px-2 sm:px-3">
                     <span className="hidden sm:inline">Complete Session</span>

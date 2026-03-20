@@ -3,6 +3,7 @@ import DialysisSession from '../models/Session';
 import Patient from '../models/Patient';
 import anomalyConfig from '../config/anomalyConfig';
 import detectAnomalies from '../utils/anomalyDetector';
+import { getTodayRange } from '../utils/dateUtils';
 
 /**
  * POST /api/sessions — record a new dialysis session.
@@ -38,9 +39,7 @@ export const createSession = async (
     }
 
     // Auto-assign queuePosition (count of today's sessions + 1)
-    const now = new Date(scheduledDate);
-    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000);
+    const { start: startOfDay, end: endOfDay } = getTodayRange(new Date(scheduledDate));
 
     const todayCount = await DialysisSession.countDocuments({
       scheduledDate: { $gte: startOfDay, $lt: endOfDay }
@@ -195,9 +194,7 @@ export const getTodaySessions = async (
   next: NextFunction
 ) => {
   try {
-    const now = new Date();
-    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000);
+    const { start: startOfDay, end: endOfDay } = getTodayRange();
 
     const sessions = await DialysisSession.find({
       scheduledDate: { $gte: startOfDay, $lt: endOfDay },
@@ -276,8 +273,6 @@ export const reorderQueue = async (
     const { id } = req.params;
     const { direction } = req.body; // 'up' or 'down'
 
-    console.log('Reorder request:', id, direction);
-
     // Get the session to move
     const session = await DialysisSession.findById(id);
     if (!session) {
@@ -286,10 +281,7 @@ export const reorderQueue = async (
     }
 
     // Get today's date range
-    const startOfDay = new Date();
-    startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date();
-    endOfDay.setHours(23, 59, 59, 999);
+    const { start: startOfDay, end: endOfDay } = getTodayRange();
 
     // Get all today's sessions sorted by queuePosition
     const todaySessions = await DialysisSession.find({

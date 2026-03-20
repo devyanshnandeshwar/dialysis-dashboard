@@ -10,6 +10,15 @@ import type { DialysisSession, Patient } from '@/types';
 
 type Filter = 'all' | 'anomalies' | 'in_progress';
 
+const HEADER_OFFSET_CLASS = 'top-0';
+const SKELETON_CARD_COUNT = 3;
+const TODAY_DATE_FORMAT: Intl.DateTimeFormatOptions = {
+  weekday: 'long',
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+};
+
 export default function TodaySchedule() {
   const [sessions, setSessions] = useState<DialysisSession[]>([]);
   const [loading, setLoading] = useState(true);
@@ -89,10 +98,7 @@ export default function TodaySchedule() {
   });
 
   const today = new Date().toLocaleDateString('en-US', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
+    ...TODAY_DATE_FORMAT,
   });
 
   const inProgressCount = sessions.filter((s) => s.status === 'in_progress').length;
@@ -100,7 +106,7 @@ export default function TodaySchedule() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 pb-10">
-      <div className="sticky top-0 z-20 -mx-6 px-6 -mt-6 pt-6 pb-4 mb-6 backdrop-blur-sm bg-bg/90 border-b border-border-subtle space-y-4">
+      <div className={`sticky ${HEADER_OFFSET_CLASS} z-20 -mx-6 px-6 -mt-6 pt-6 pb-4 mb-6 backdrop-blur-sm bg-bg/90 border-b border-border-subtle space-y-4`}>
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
@@ -159,7 +165,7 @@ export default function TodaySchedule() {
       {/* Session list */}
       {loading ? (
         <div className="space-y-3">
-          {[1, 2, 3].map((i) => (
+          {Array.from({ length: SKELETON_CARD_COUNT }, (_, i) => (
             <div key={i} className="bg-surface border border-border rounded-lg p-4 space-y-3">
               <div className="flex items-center gap-3">
                 <Skeleton className="h-4 w-32 bg-surface-alt" />

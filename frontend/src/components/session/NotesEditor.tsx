@@ -8,7 +8,7 @@ import { updateNurseNotes } from '@/api/sessions';
 interface Props {
   sessionId: string;
   initialNotes: string;
-  onNotesSaved: (newNotes: string) => void;
+  onNotesSaved: (newNotes: string) => Promise<void> | void;
 }
 
 export default function NotesEditor({
@@ -25,7 +25,7 @@ export default function NotesEditor({
     try {
       await updateNurseNotes(sessionId, notes);
       toast.success('Notes saved');
-      onNotesSaved(notes);
+      await onNotesSaved(notes);
       setEditing(false);
     } catch {
       toast.error('Failed to save notes');

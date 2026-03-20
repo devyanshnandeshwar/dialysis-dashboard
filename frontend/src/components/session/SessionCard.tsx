@@ -20,6 +20,79 @@ function getBorderColor(session: DialysisSession): string {
   return 'border-l-border';
 }
 
+interface VitalsDisplayProps {
+  session: DialysisSession;
+  isNotStarted: boolean;
+}
+
+function VitalsDisplay({ session, isNotStarted }: VitalsDisplayProps) {
+  return (
+    <div className="hidden lg:flex shrink-0 items-center justify-center gap-6 px-6 border-l border-border-subtle">
+      <div className="flex flex-col gap-1 w-24">
+        <div className="flex items-center gap-1.5 text-[10px] text-text-muted font-bold tracking-widest uppercase">
+          <Weight className="w-3.5 h-3.5 text-text-muted opacity-80" /> WEIGHT
+        </div>
+        <div className="text-sm font-medium text-text-primary">
+          {isNotStarted ? '—' : (
+            <span className="flex items-center gap-1">
+              {session.preWeight ?? '—'} <span className="text-text-muted text-xs mx-0.5">→</span> {session.postWeight ?? '—'}
+            </span>
+          )}
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-1 w-36 border-l border-border-subtle pl-6">
+        <div className="flex items-center gap-1.5 text-[10px] text-text-muted font-bold tracking-widest uppercase">
+          <HeartPulse className="w-3.5 h-3.5 text-text-muted opacity-80" /> BP
+        </div>
+        <div className="text-sm font-medium text-text-primary">
+          {isNotStarted ? '—' : (
+            <span className="flex items-center gap-1">
+              {session.preBloodPressure ? `${session.preBloodPressure.systolic}/${session.preBloodPressure.diastolic}` : '—'}
+              <span className="text-text-muted text-xs mx-0.5">→</span>
+              {session.postBloodPressure ? `${session.postBloodPressure.systolic}/${session.postBloodPressure.diastolic}` : '—'}
+            </span>
+          )}
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-1 w-24 border-l border-border-subtle pl-6">
+        <div className="flex items-center gap-1.5 text-[10px] text-text-muted font-bold tracking-widest uppercase">
+          <Clock className="w-3.5 h-3.5 text-text-muted opacity-80" /> DURATION
+        </div>
+        <div className="text-sm font-medium text-text-primary">
+          {isNotStarted ? '—' : `${session.sessionDurationMinutes ?? '—'} / ${session.targetDurationMinutes}m`}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+interface AnomalyBadgesProps {
+  anomalies: DialysisSession['anomalies'];
+}
+
+function AnomalyBadges({ anomalies }: AnomalyBadgesProps) {
+  return (
+    <div className="hidden xl:flex shrink-0 w-48 items-center justify-center px-4 flex-col gap-2 border-l border-border-subtle">
+      {anomalies.length > 0 ? (
+        anomalies.map((anom, i) => (
+          <div
+            key={i}
+            className={`flex items-center gap-1.5 text-[10px] tracking-wide font-bold px-2.5 py-1 rounded-full border whitespace-nowrap w-full text-left truncate ${anom.severity === 'critical' ? 'bg-critical-bg text-critical border-critical/40' : 'bg-warning-bg text-warning border-warning/40'}`}
+            title={anom.message}
+          >
+            <AlertTriangle className="w-3 h-3 shrink-0" />
+            <span className="truncate">{anom.type.replace(/_/g, ' ')}</span>
+          </div>
+        ))
+      ) : (
+        <div className="text-[11px] text-text-muted/40 uppercase tracking-widest font-semibold text-center w-full">NO ALERTS</div>
+      )}
+    </div>
+  );
+}
+
 interface SessionCardProps {
   session: DialysisSession;
   sequenceNumber: number; // sequential 1, 2, 3...
@@ -173,64 +246,8 @@ const SessionCard = React.memo(function SessionCard({
             </div>
           </div>
 
-          {/* Vitals Fixed Columns */}
-          <div className="hidden lg:flex shrink-0 items-center justify-center gap-6 px-6 border-l border-border-subtle">
-
-            {/* Weight Col */}
-            <div className="flex flex-col gap-1 w-24">
-              <div className="flex items-center gap-1.5 text-[10px] text-text-muted font-bold tracking-widest uppercase">
-                <Weight className="w-3.5 h-3.5 text-text-muted opacity-80" /> WEIGHT
-              </div>
-              <div className="text-sm font-medium text-text-primary">
-                {isNotStarted ? '—' : (
-                  <span className="flex items-center gap-1">
-                    {session.preWeight ?? '—'} <span className="text-text-muted text-xs mx-0.5">→</span> {session.postWeight ?? '—'}
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* BP Col */}
-            <div className="flex flex-col gap-1 w-36 border-l border-border-subtle pl-6">
-              <div className="flex items-center gap-1.5 text-[10px] text-text-muted font-bold tracking-widest uppercase">
-                <HeartPulse className="w-3.5 h-3.5 text-text-muted opacity-80" /> BP
-              </div>
-              <div className="text-sm font-medium text-text-primary">
-                {isNotStarted ? '—' : (
-                  <span className="flex items-center gap-1">
-                    {session.preBloodPressure ? `${session.preBloodPressure.systolic}/${session.preBloodPressure.diastolic}` : '—'}
-                    <span className="text-text-muted text-xs mx-0.5">→</span>
-                    {session.postBloodPressure ? `${session.postBloodPressure.systolic}/${session.postBloodPressure.diastolic}` : '—'}
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* Duration Col */}
-            <div className="flex flex-col gap-1 w-24 border-l border-border-subtle pl-6">
-              <div className="flex items-center gap-1.5 text-[10px] text-text-muted font-bold tracking-widest uppercase">
-                <Clock className="w-3.5 h-3.5 text-text-muted opacity-80" /> DURATION
-              </div>
-              <div className="text-sm font-medium text-text-primary">
-                {isNotStarted ? '—' : `${session.sessionDurationMinutes ?? '—'} / ${session.targetDurationMinutes}m`}
-              </div>
-            </div>
-
-          </div>
-
-          {/* Anomalies Stack */}
-          <div className="hidden xl:flex shrink-0 w-48 items-center justify-center px-4 flex-col gap-2 border-l border-border-subtle">
-            {session.anomalies.length > 0 ? (
-              session.anomalies.map((anom, i) => (
-                <div key={i} className={`flex items-center gap-1.5 text-[10px] tracking-wide font-bold px-2.5 py-1 rounded-full border whitespace-nowrap w-full text-left truncate ${anom.severity === 'critical' ? 'bg-critical-bg text-critical border-[rgba(240,79,79,0.3)]' : 'bg-warning-bg text-warning border-[rgba(240,165,0,0.3)]'}`} title={anom.message}>
-                  <AlertTriangle className="w-3 h-3 shrink-0" />
-                  <span className="truncate">{anom.type.replace(/_/g, ' ')}</span>
-                </div>
-              ))
-            ) : (
-              <div className="text-[11px] text-text-muted/40 uppercase tracking-widest font-semibold text-center w-full">NO ALERTS</div>
-            )}
-          </div>
+          <VitalsDisplay session={session} isNotStarted={isNotStarted} />
+          <AnomalyBadges anomalies={session.anomalies} />
 
           {/* Right Action Panel */}
           <div className="shrink-0 w-28 sm:w-auto flex flex-col justify-between items-center px-2 sm:px-4 py-3 border-l border-border-subtle bg-surface-alt/40 rounded-r-xl">
@@ -294,7 +311,10 @@ const SessionCard = React.memo(function SessionCard({
             <NotesEditor
               sessionId={session._id}
               initialNotes={currentNotes}
-              onNotesSaved={setCurrentNotes}
+              onNotesSaved={async (newNotes) => {
+                setCurrentNotes(newNotes);
+                await onSessionUpdated?.();
+              }}
             />
           </div>
         </div>

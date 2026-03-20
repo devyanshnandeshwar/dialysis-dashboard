@@ -39,6 +39,8 @@ const PatientSchema = new Schema<IPatient>(
   }
 );
 
+PatientSchema.index({ mrn: 1 }, { unique: true });
+
 const Patient = mongoose.model<IPatient>('Patient', PatientSchema);
 
 export default Patient;

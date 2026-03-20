@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import DialysisSession from '../models/Session';
 import { MACHINES } from '../config/machines';
+import { getTodayRange } from '../utils/dateUtils';
 
 export const getMachines = async (
     _req: Request,
@@ -8,9 +9,7 @@ export const getMachines = async (
     next: NextFunction
 ) => {
     try {
-        const now = new Date();
-        const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000);
+        const { start: startOfDay, end: endOfDay } = getTodayRange();
 
         const activeToday = await DialysisSession.find(
             {

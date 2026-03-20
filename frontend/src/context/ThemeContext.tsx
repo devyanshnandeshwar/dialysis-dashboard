@@ -13,15 +13,23 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<Theme>(() => {
-    const savedTheme = localStorage.getItem('dialysis-theme') as Theme | null;
-    return savedTheme === 'light' || savedTheme === 'dark' ? savedTheme : 'dark';
+    try {
+      const savedTheme = localStorage.getItem('dialysis-theme') as Theme | null;
+      return savedTheme === 'light' || savedTheme === 'dark' ? savedTheme : 'dark';
+    } catch {
+      return 'dark';
+    }
   });
 
   useEffect(() => {
     const root = document.documentElement;
     root.classList.toggle('dark', theme === 'dark');
     root.classList.toggle('light', theme === 'light');
-    localStorage.setItem('dialysis-theme', theme);
+    try {
+      localStorage.setItem('dialysis-theme', theme);
+    } catch {
+      // Ignore storage failures in restricted environments.
+    }
   }, [theme]);
 
   const toggleTheme = () => {

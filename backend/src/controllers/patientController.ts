@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import Patient from '../models/Patient';
 import DialysisSession from '../models/Session';
+import { getTodayRange } from '../utils/dateUtils';
 
 /**
  * POST /api/patients — register a new patient
@@ -40,9 +41,7 @@ export const getPatients = async (
   try {
     const patients = await Patient.find().sort({ createdAt: -1 }).lean();
 
-    const now = new Date();
-    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000);
+    const { start: startOfDay, end: endOfDay } = getTodayRange();
 
     // Get session stats per patient
     const stats = await DialysisSession.aggregate([
@@ -142,6 +141,8 @@ export const updatePatient = async (
   next: NextFunction
 ) => {
   try {
+    delete req.body.mrn;
+
     const { name, dryWeight, dateOfBirth, primaryDiagnosis, assignedUnit } =
       req.body;
 
