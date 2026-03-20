@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { getPaginatedSessions } from '@/api/sessions';
 import {
   Dialog,
@@ -8,10 +8,8 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Loader2, History, Weight, HeartPulse, Clock, ChevronDown, ChevronUp } from 'lucide-react';
 import StatusBadge from '@/components/ui/StatusBadge';
-import NotesEditor from '@/components/session/NotesEditor';
 import type { Patient, DialysisSession } from '@/types';
 
 interface PatientHistoryModalProps {
@@ -29,71 +27,85 @@ function SessionHistoryRow({ session }: { session: DialysisSession }) {
   };
 
   return (
-    <div className="bg-surface border border-border-custom rounded-lg overflow-hidden mb-3">
-      <div className="p-4 flex items-center gap-4 flex-wrap sm:flex-nowrap">
-        {/* Date & Status */}
-        <div className="min-w-[120px] shrink-0">
+    <div className="bg-surface border border-border-custom rounded-lg overflow-hidden mb-3 w-full">
+      {/* Vitals Grid Row */}
+      <div className="p-4 grid grid-cols-[140px_1fr_1fr_1fr_40px] gap-4 items-center">
+        {/* Col 1: Date & Status */}
+        <div className="flex flex-col gap-1.5">
           <div className="font-medium text-text-primary text-sm">{formatTime(session.scheduledDate)}</div>
-          <div className="mt-1"><StatusBadge status={session.status} /></div>
+          <div><StatusBadge status={session.status} /></div>
         </div>
 
-        {/* Vitals */}
-        <div className="flex-1 flex gap-4 xl:gap-6 min-w-[200px]">
-          <div className="flex flex-col gap-1 w-20">
-            <div className="flex items-center gap-1 text-[11px] text-text-muted font-medium">
-              <Weight className="w-3 h-3 text-brand" /> Weight
-            </div>
-            <div className="text-xs font-semibold text-text-primary">
-              {isNotStarted ? '—' : `${session.preWeight ?? '-'} → ${session.postWeight ?? '-'}`}
-            </div>
+        {/* Col 2: Weight */}
+        <div className="flex flex-col gap-1.5">
+          <div className="flex items-center gap-1 text-xs text-text-muted font-medium uppercase">
+            <Weight className="w-3.5 h-3.5 text-brand" /> Weight
           </div>
-          <div className="flex flex-col gap-1 w-24">
-            <div className="flex items-center gap-1 text-[11px] text-text-muted font-medium">
-              <HeartPulse className="w-3 h-3 text-critical" /> BP
-            </div>
-            <div className="text-xs font-semibold text-text-primary">
-              {isNotStarted ? '—' : `${session.preBloodPressure ? `${session.preBloodPressure.systolic}/${session.preBloodPressure.diastolic}` : '-'} → ${session.postBloodPressure ? `${session.postBloodPressure.systolic}/${session.postBloodPressure.diastolic}` : '-'}`}
-            </div>
-          </div>
-          <div className="flex flex-col gap-1 w-16">
-            <div className="flex items-center gap-1 text-[11px] text-text-muted font-medium">
-              <Clock className="w-3 h-3 text-warning" /> Dur.
-            </div>
-            <div className="text-xs font-semibold text-text-primary">
-              {isNotStarted ? '—' : `${session.sessionDurationMinutes ?? '-'}m`}
-            </div>
+          <div className="text-sm font-semibold text-text-primary">
+            {isNotStarted ? '—' : `${session.preWeight ?? '-'} → ${session.postWeight ?? '-'}`}
           </div>
         </div>
 
-        {/* Anomalies & Expansion */}
-        <div className="flex items-center gap-2 shrink-0 ml-auto">
-          {session.anomalies.length > 0 && (
-            <div className="flex gap-1 flex-wrap w-24 justify-end">
-              {session.anomalies.map((anom, i) => (
-                <div key={i} className={`text-[9px] font-bold px-1.5 py-0.5 rounded border whitespace-nowrap ${anom.severity === 'critical' ? 'bg-critical/10 text-critical border-critical/30' : 'bg-warning/10 text-warning border-warning/30'}`} title={anom.message}>
-                  {anom.type.replace('_', ' ').toUpperCase()}
-                </div>
-              ))}
-            </div>
-          )}
+        {/* Col 3: BP */}
+        <div className="flex flex-col gap-1.5">
+          <div className="flex items-center gap-1 text-xs text-text-muted font-medium uppercase">
+            <HeartPulse className="w-3.5 h-3.5 text-critical" /> BP
+          </div>
+          <div className="text-sm font-semibold text-text-primary">
+            {isNotStarted ? '—' : `${session.preBloodPressure ? `${session.preBloodPressure.systolic}/${session.preBloodPressure.diastolic}` : '-'} → ${session.postBloodPressure ? `${session.postBloodPressure.systolic}/${session.postBloodPressure.diastolic}` : '-'}`}
+          </div>
+        </div>
+
+        {/* Col 4: Duration */}
+        <div className="flex flex-col gap-1.5">
+          <div className="flex items-center gap-1 text-xs text-text-muted font-medium uppercase">
+            <Clock className="w-3.5 h-3.5 text-warning" /> Duration
+          </div>
+          <div className="text-sm font-semibold text-text-primary">
+            {isNotStarted ? '—' : `${session.sessionDurationMinutes ?? '-'}m`}
+          </div>
+        </div>
+
+        {/* Col 5: Expansion Toggle */}
+        <div className="flex justify-end">
           <Button 
             variant="ghost" 
             size="icon" 
-            className="h-7 w-7 text-text-muted hover:text-text-primary hover:bg-surface-alt ml-2"
             onClick={() => setExpanded(!expanded)}
+            className="text-text-muted hover:text-text-primary hover:bg-surface-alt"
           >
             {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </Button>
         </div>
       </div>
 
+      {/* Anomalies Row */}
+      <div className="px-4 pb-4">
+        {session.anomalies.length > 0 ? (
+          <div className="flex gap-2 flex-wrap">
+            {session.anomalies.map((anom, i) => (
+              <div key={i} className={`text-[10px] font-bold px-2 py-1 rounded border ${anom.severity === 'critical' ? 'bg-critical/10 text-critical border-critical/30' : 'bg-warning/10 text-warning border-warning/30'}`} title={anom.message}>
+                {anom.type.replace(/_/g, ' ').toUpperCase()}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-xs text-text-muted italic flex items-center h-6">
+            No anomalies
+          </div>
+        )}
+      </div>
+
+      {/* Expanded Nurse Notes */}
       {expanded && (
-        <div className="p-4 border-t border-border-custom space-y-3 bg-surface-alt/10">
-           <NotesEditor
-             sessionId={session._id}
-             initialNotes={session.nurseNotes || ''}
-             onNotesSaved={() => {}}
-           />
+        <div className="p-4 border-t border-border-custom bg-surface-alt/10">
+          <div className="text-sm text-text-primary">
+            {session.nurseNotes ? (
+              <p className="whitespace-pre-wrap">{session.nurseNotes}</p>
+            ) : (
+              <span className="text-text-muted italic">No notes recorded</span>
+            )}
+          </div>
         </div>
       )}
     </div>
@@ -108,7 +120,7 @@ export default function PatientHistoryModal({ patient }: PatientHistoryModalProp
   const [totalPages, setTotalPages] = useState(1);
   const [totalSessions, setTotalSessions] = useState(0);
 
-  const fetchHistory = async (pageNumber: number, append = false) => {
+  const fetchHistory = useCallback(async (pageNumber: number, append = false) => {
     try {
       setLoading(true);
       const data = await getPaginatedSessions({ patientId: patient._id, page: pageNumber, limit: 5 });
@@ -120,14 +132,14 @@ export default function PatientHistoryModal({ patient }: PatientHistoryModalProp
     } finally {
       setLoading(false);
     }
-  };
+  }, [patient._id]);
 
   useEffect(() => {
     if (open) {
       setPage(1);
       fetchHistory(1);
     }
-  }, [open]);
+  }, [open, fetchHistory]);
 
   const handleLoadMore = () => {
     const nextPage = page + 1;
@@ -147,8 +159,8 @@ export default function PatientHistoryModal({ patient }: PatientHistoryModalProp
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="max-w-3xl bg-surface border-border-custom text-text-primary p-0 overflow-hidden">
-        <DialogHeader className="px-6 py-4 border-b border-border-custom bg-surface-alt/10">
+      <DialogContent className="max-w-3xl w-full min-h-0 bg-surface border-border-custom text-text-primary p-0 overflow-hidden flex flex-col">
+        <DialogHeader className="px-6 py-4 border-b border-border-custom bg-surface-alt/10 shrink-0">
           <DialogTitle className="text-text-primary flex items-end gap-3">
             {patient.name}
             <span className="text-xs font-normal text-text-muted mb-0.5">MRN: {patient.mrn}</span>
@@ -156,7 +168,7 @@ export default function PatientHistoryModal({ patient }: PatientHistoryModalProp
           </DialogTitle>
         </DialogHeader>
 
-        <ScrollArea className="h-[60vh] px-6 py-4">
+        <div className="overflow-y-auto max-h-[70vh] px-6 py-4">
           {sessions.length === 0 && !loading ? (
             <div className="text-center py-12 text-text-muted text-sm italic">
               No sessions recorded yet.
@@ -180,7 +192,7 @@ export default function PatientHistoryModal({ patient }: PatientHistoryModalProp
               </Button>
             </div>
           )}
-        </ScrollArea>
+        </div>
       </DialogContent>
     </Dialog>
   );
