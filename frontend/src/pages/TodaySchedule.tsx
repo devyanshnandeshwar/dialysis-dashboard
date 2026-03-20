@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CalendarDays, AlertTriangle, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import type { DialysisSession, Patient } from '@/types';
+import type { DialysisSession, Patient, TodaySessionsSummary } from '@/types';
 
 type Filter = 'all' | 'anomalies' | 'in_progress';
 
@@ -20,7 +20,16 @@ const TODAY_DATE_FORMAT: Intl.DateTimeFormatOptions = {
 };
 
 export default function TodaySchedule() {
+  const emptySummary: TodaySessionsSummary = {
+    total: 0,
+    inProgress: 0,
+    notStarted: 0,
+    completed: 0,
+    withAnomalies: 0,
+  };
+
   const [sessions, setSessions] = useState<DialysisSession[]>([]);
+  const [summary, setSummary] = useState<TodaySessionsSummary>(emptySummary);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<Filter>('all');
   const [movingSessionId, setMovingSessionId] = useState<string | null>(null);
@@ -29,7 +38,8 @@ export default function TodaySchedule() {
     try {
       setLoading(true);
       const data = await getTodaySessions();
-      setSessions(data);
+      setSessions(data.sessions);
+      setSummary(data.summary);
     } catch {
       toast.error('Failed to load today\'s sessions');
     } finally {
@@ -101,8 +111,7 @@ export default function TodaySchedule() {
     ...TODAY_DATE_FORMAT,
   });
 
-  const inProgressCount = sessions.filter((s) => s.status === 'in_progress').length;
-  const anomalyCount = sessions.filter((s) => s.anomalies.length > 0).length;
+  const anomalyCount = summary.withAnomalies;
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 pb-10">
@@ -124,10 +133,10 @@ export default function TodaySchedule() {
         {/* Stats Row */}
         <div className="flex flex-wrap gap-3">
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface border border-border text-xs font-medium text-text-primary shadow-sm">
-            <span className="text-text-muted">Total Today:</span> {sessions.length}
+            <span className="text-text-muted">Total Today:</span> {summary.total}
           </div>
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface border border-border text-xs font-medium text-text-primary shadow-sm">
-            <span className="text-text-muted">In Progress:</span> {inProgressCount}
+            <span className="text-text-muted">In Progress:</span> {summary.inProgress}
           </div>
           <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full shadow-sm text-xs font-medium ${anomalyCount > 0
             ? 'bg-critical-bg border border-critical text-critical'

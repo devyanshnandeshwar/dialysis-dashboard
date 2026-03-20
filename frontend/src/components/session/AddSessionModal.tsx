@@ -37,6 +37,8 @@ export default function AddSessionModal({
   lockPatient = false,
   triggerLabel = 'Add Session',
 }: Props) {
+  const todayIso = new Date().toISOString().split('T')[0]!;
+
   const [open, setOpen] = useState(false);
   const [patients, setPatients] = useState<Patient[]>([]);
   const [machines, setMachines] = useState<HDMachine[]>([]);
@@ -48,7 +50,7 @@ export default function AddSessionModal({
   const [patientId, setPatientId] = useState('');
   const [machineId, setMachineId] = useState('');
   const [scheduledDate, setScheduledDate] = useState(
-    new Date().toISOString().split('T')[0]!
+    todayIso
   );
   const [preWeight, setPreWeight] = useState('');
   const [preBpSystolic, setPreBpSystolic] = useState('');
@@ -61,7 +63,7 @@ export default function AddSessionModal({
 
   useEffect(() => {
     if (open) {
-      setScheduledDate(new Date().toISOString().split('T')[0]!);
+      setScheduledDate(todayIso);
       if (preselectedPatientId) {
         setPatientId(preselectedPatientId);
       }
@@ -80,7 +82,7 @@ export default function AddSessionModal({
         .catch(() => toast.error('Failed to load machines'))
         .finally(() => setMachinesLoading(false));
     }
-  }, [open, preselectedPatientId]);
+  }, [open, preselectedPatientId, todayIso]);
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -106,7 +108,7 @@ export default function AddSessionModal({
   const resetForm = () => {
     setPatientId('');
     setMachineId('');
-    setScheduledDate(new Date().toISOString().split('T')[0]!);
+    setScheduledDate(todayIso);
     setPreWeight('');
     setPreBpSystolic('');
     setPreBpDiastolic('');
@@ -125,6 +127,7 @@ export default function AddSessionModal({
   const handleSubmit = async () => {
     if (!validate()) return;
     setSubmitting(true);
+    setErrors((prev) => ({ ...prev, scheduledDate: '' }));
 
     try {
       const body: Record<string, unknown> = {
@@ -147,9 +150,31 @@ export default function AddSessionModal({
       setOpen(false);
       onSessionCreated();
     } catch (error) {
-      if (axios.isAxiosError<{ details?: Array<{ msg?: string }> }>(error)) {
+      if (axios.isAxiosError<{ error?: string; details?: Array<{ msg?: string }> }>(error)) {
+        const statusCode = error.response?.status;
+        const backendError = error.response?.data?.error;
         const firstError = error.response?.data?.details?.[0]?.msg;
-        toast.error(firstError || 'Failed to create session');
+
+        if (statusCode === 409) {
+          toast.error(backendError || 'Patient already has a session today');
+          if (lockPatient) {
+            setOpen(false);
+          }
+          return;
+        }
+
+        if (statusCode === 400 && backendError) {
+          if (
+            backendError === 'Cannot schedule a session in the past' ||
+            backendError === 'Cannot schedule more than 30 days in advance'
+          ) {
+            setErrors((prev) => ({ ...prev, scheduledDate: backendError }));
+          }
+          toast.error(backendError);
+          return;
+        }
+
+        toast.error(firstError || backendError || 'Failed to create session');
       } else {
         toast.error('Failed to create session');
       }
@@ -241,6 +266,7 @@ export default function AddSessionModal({
                 type="date"
                 value={scheduledDate}
                 onChange={(e) => setScheduledDate(e.target.value)}
+                min={todayIso}
                 className={fieldClass}
               />
               {errors.scheduledDate && (

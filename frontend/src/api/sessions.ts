@@ -1,5 +1,5 @@
 import client from './client';
-import type { DialysisSession } from '@/types';
+import type { DialysisSession, TodaySessionsResponse } from '@/types';
 
 interface CompleteSessionPayload {
   postWeight: number;
@@ -11,8 +11,8 @@ interface CompleteSessionPayload {
   nurseNotes?: string;
 }
 
-export const getTodaySessions = async (): Promise<DialysisSession[]> => {
-  const { data } = await client.get<DialysisSession[]>('/sessions/today');
+export const getTodaySessions = async (): Promise<TodaySessionsResponse> => {
+  const { data } = await client.get<TodaySessionsResponse>('/sessions/today');
   return data;
 };
 

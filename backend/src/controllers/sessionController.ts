@@ -26,6 +26,28 @@ export const createSession = async (
       targetDurationMinutes,
     } = req.body;
 
+    const scheduled = new Date(scheduledDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const maxDate = new Date(today);
+    maxDate.setDate(maxDate.getDate() + 30);
+
+    if (scheduled < today) {
+      res.status(400).json({
+        success: false,
+        error: 'Cannot schedule a session in the past',
+      });
+      return;
+    }
+
+    if (scheduled > maxDate) {
+      res.status(400).json({
+        success: false,
+        error: 'Cannot schedule more than 30 days in advance',
+      });
+      return;
+    }
+
     if (!machineId) {
       res.status(400).json({ error: 'Machine ID is required' });
       return;
@@ -38,8 +60,22 @@ export const createSession = async (
       return;
     }
 
-    // Auto-assign queuePosition (count of today's sessions + 1)
-    const { start: startOfDay, end: endOfDay } = getTodayRange(new Date(scheduledDate));
+    // Auto-assign queuePosition (count of day's sessions + 1)
+    const { start: startOfDay, end: endOfDay } = getTodayRange(scheduled);
+
+    const duplicate = await DialysisSession.findOne({
+      patientId,
+      scheduledDate: { $gte: startOfDay, $lt: endOfDay },
+    });
+
+    if (duplicate) {
+      res.status(409).json({
+        success: false,
+        error: 'Patient already has a session scheduled for this date',
+        existingSessionId: duplicate._id,
+      });
+      return;
+    }
 
     const todayCount = await DialysisSession.countDocuments({
       scheduledDate: { $gte: startOfDay, $lt: endOfDay }
@@ -172,6 +208,20 @@ export const completeSession = async (
     session.anomalies = anomalies;
     await session.save();
 
+    const { start: startOfDay, end: endOfDay } = getTodayRange(new Date(session.scheduledDate));
+    const activeUsingSameMachine = await DialysisSession.countDocuments({
+      _id: { $ne: session._id },
+      machineId: session.machineId,
+      scheduledDate: { $gte: startOfDay, $lt: endOfDay },
+      status: { $in: ['not_started', 'in_progress'] },
+    });
+
+    if (activeUsingSameMachine > 0) {
+      console.warn(
+        `[machine-integrity] session ${session._id.toString()} completed but machine ${session.machineId} remains active in ${activeUsingSameMachine} session(s)`
+      );
+    }
+
     const populated = await DialysisSession.findById(session._id).populate(
       'patientId',
       'name mrn dryWeight'
@@ -189,20 +239,58 @@ export const completeSession = async (
  * Sorts: in_progress → not_started → completed.
  */
 export const getTodaySessions = async (
-  _req: Request,
+  req: Request,
   res: Response,
   next: NextFunction
 ) => {
   try {
     const { start: startOfDay, end: endOfDay } = getTodayRange();
+    const includeCompleted = req.query.includeCompleted !== 'false';
+
+    const statusFilter = includeCompleted
+      ? undefined
+      : { $in: ['in_progress', 'not_started'] as const };
 
     const sessions = await DialysisSession.find({
       scheduledDate: { $gte: startOfDay, $lt: endOfDay },
+      ...(statusFilter ? { status: statusFilter } : {}),
     })
       .populate('patientId', 'name mrn dryWeight')
       .sort({ queuePosition: 1, createdAt: 1 });
 
-    res.json(sessions);
+    const statusOrder: Record<'in_progress' | 'not_started' | 'completed', number> = {
+      in_progress: 0,
+      not_started: 1,
+      completed: 2,
+    };
+
+    const sortedSessions = [...sessions].sort((a, b) => {
+      const statusDelta = statusOrder[a.status] - statusOrder[b.status];
+      if (statusDelta !== 0) {
+        return statusDelta;
+      }
+
+      const aQueue = a.queuePosition ?? Number.MAX_SAFE_INTEGER;
+      const bQueue = b.queuePosition ?? Number.MAX_SAFE_INTEGER;
+      if (aQueue !== bQueue) {
+        return aQueue - bQueue;
+      }
+
+      return a._id.toString().localeCompare(b._id.toString());
+    });
+
+    const summary = {
+      total: sortedSessions.length,
+      inProgress: sortedSessions.filter((s) => s.status === 'in_progress').length,
+      notStarted: sortedSessions.filter((s) => s.status === 'not_started').length,
+      completed: sortedSessions.filter((s) => s.status === 'completed').length,
+      withAnomalies: sortedSessions.filter((s) => s.anomalies.length > 0).length,
+    };
+
+    res.json({
+      sessions: sortedSessions,
+      summary,
+    });
   } catch (err) {
     next(err);
   }

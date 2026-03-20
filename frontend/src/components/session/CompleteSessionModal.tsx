@@ -13,6 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { completeSession } from '@/api/sessions';
+import { getMachines } from '@/api/machines';
 import type { DialysisSession, Patient } from '@/types';
 
 interface CompleteSessionModalProps {
@@ -97,6 +98,7 @@ export default function CompleteSessionModal({
                 toast.success('Session completed — no anomalies');
             }
 
+            await getMachines();
             resetForm();
             setOpen(false);
             await onCompleted();

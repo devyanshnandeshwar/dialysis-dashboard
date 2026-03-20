@@ -58,3 +58,16 @@ export interface DialysisSession {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface TodaySessionsSummary {
+  total: number;
+  inProgress: number;
+  notStarted: number;
+  completed: number;
+  withAnomalies: number;
+}
+
+export interface TodaySessionsResponse {
+  sessions: DialysisSession[];
+  summary: TodaySessionsSummary;
+}

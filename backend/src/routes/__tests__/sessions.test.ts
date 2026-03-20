@@ -34,7 +34,12 @@ describe('Session API Routes', () => {
     jest.spyOn(DialysisSession, 'find').mockReturnValue({
       populate: jest.fn().mockReturnValue({
         sort: jest.fn().mockResolvedValue([
-          { _id: 'mock-session-id', queuePosition: 1 }
+          {
+            _id: 'mock-session-id',
+            queuePosition: 1,
+            status: 'in_progress',
+            anomalies: [],
+          }
         ])
       })
     } as any);
@@ -77,11 +82,17 @@ describe('Session API Routes', () => {
     expect(res.body.details[0].msg).toBe('Patient ID is required');
   });
 
-  it('GET /api/sessions/today -> 200 returns array', async () => {
+  it('GET /api/sessions/today -> 200 returns sessions and summary', async () => {
     const res = await request(app).get('/api/sessions/today');
 
     expect(res.status).toBe(200);
-    expect(Array.isArray(res.body)).toBe(true);
-    expect(res.body[0]).toHaveProperty('_id', 'mock-session-id');
+    expect(Array.isArray(res.body.sessions)).toBe(true);
+    expect(res.body.sessions[0]).toHaveProperty('_id', 'mock-session-id');
+    expect(res.body.summary).toBeDefined();
+    expect(res.body.summary).toHaveProperty('total');
+    expect(res.body.summary).toHaveProperty('inProgress');
+    expect(res.body.summary).toHaveProperty('notStarted');
+    expect(res.body.summary).toHaveProperty('completed');
+    expect(res.body.summary).toHaveProperty('withAnomalies');
   });
 });
