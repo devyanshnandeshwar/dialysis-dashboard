@@ -27,3 +27,13 @@ export const updateNurseNotes = async (
   });
   return data;
 };
+
+export const updateQueuePosition = async (
+  id: string,
+  queuePosition: number
+): Promise<DialysisSession[]> => {
+  const { data } = await client.patch<DialysisSession[]>(`/sessions/${id}/queue`, {
+    queuePosition,
+  });
+  return data;
+};

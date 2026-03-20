@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
-import { getTodaySessions } from '@/api/sessions';
+import { getTodaySessions, updateQueuePosition } from '@/api/sessions';
 import SessionCard from '@/components/session/SessionCard';
 import AddSessionModal from '@/components/session/AddSessionModal';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CalendarDays, AlertTriangle, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import type { DialysisSession } from '@/types';
+import type { DialysisSession, Patient } from '@/types';
 
 type Filter = 'all' | 'anomalies' | 'in_progress';
 
@@ -14,11 +14,14 @@ export default function TodaySchedule() {
   const [sessions, setSessions] = useState<DialysisSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<Filter>('all');
+  const [movingSessionId, setMovingSessionId] = useState<string | null>(null);
 
   const fetchSessions = useCallback(async () => {
     try {
       setLoading(true);
       const data = await getTodaySessions();
+      // Keep only backend sorting, or fallback locally if needed:
+      // data.sort((a, b) => (a.queuePosition || 0) - (b.queuePosition || 0));
       setSessions(data);
     } catch {
       toast.error('Failed to load today\'s sessions');
@@ -31,7 +34,65 @@ export default function TodaySchedule() {
     fetchSessions();
   }, [fetchSessions]);
 
-  const filtered = sessions.filter((s) => {
+  const handleMoveUp = async (id: string, currentPos: number) => {
+    if (currentPos <= 1) return;
+    await handleReorder(id, currentPos - 1);
+  };
+
+  const handleMoveDown = async (id: string, currentPos: number) => {
+    await handleReorder(id, currentPos + 1);
+  };
+
+  const handleReorder = async (id: string, newPos: number) => {
+    try {
+      setMovingSessionId(id);
+      
+      // Optimistic UI update
+      setSessions(prev => {
+        const cloned = [...prev];
+        const targetIdx = cloned.findIndex(s => s._id === id);
+        if (targetIdx === -1) return prev;
+        
+        const currentPos = cloned[targetIdx].queuePosition || 0;
+        
+        // Adjust others logically
+        cloned.forEach(s => {
+          if (!s.queuePosition || s._id === id) return;
+          if (newPos < currentPos && s.queuePosition >= newPos && s.queuePosition < currentPos) {
+            s.queuePosition += 1;
+          } else if (newPos > currentPos && s.queuePosition > currentPos && s.queuePosition <= newPos) {
+            s.queuePosition -= 1;
+          }
+        });
+        
+        cloned[targetIdx].queuePosition = newPos;
+        return cloned.sort((a, b) => (a.queuePosition || 999) - (b.queuePosition || 999));
+      });
+
+      // API call
+      const updatedSchedule = await updateQueuePosition(id, newPos);
+      setSessions(updatedSchedule); // Sync with source of truth
+    } catch {
+      toast.error('Failed to reorder session');
+      fetchSessions(); // Revert on failure
+    } finally {
+      setMovingSessionId(null);
+    }
+  };
+
+  const handlePatientUpdated = (patientId: string, updatedPatient: Patient) => {
+    setSessions(prev => prev.map(session => {
+      if ((session.patientId as Patient)._id === patientId) {
+        return { ...session, patientId: updatedPatient };
+      }
+      return session;
+    }));
+  };
+
+  // Ensure sessions are sorted by queuePosition locally before filtering
+  const sortedSessions = [...sessions].sort((a, b) => (a.queuePosition || 999) - (b.queuePosition || 999));
+
+  const filtered = sortedSessions.filter((s) => {
     if (filter === 'anomalies') return s.anomalies.length > 0;
     if (filter === 'in_progress') return s.status === 'in_progress';
     return true;
@@ -119,8 +180,17 @@ export default function TodaySchedule() {
         </div>
       ) : (
         <div className="space-y-3">
-          {filtered.map((session) => (
-            <SessionCard key={session._id} session={session} />
+          {filtered.map((session, index) => (
+            <SessionCard 
+              key={session._id} 
+              session={session} 
+              isFirst={index === 0}
+              isLast={index === filtered.length - 1}
+              isMoving={movingSessionId === session._id}
+              onMoveUp={handleMoveUp}
+              onMoveDown={handleMoveDown}
+              onPatientUpdated={handlePatientUpdated}
+            />
           ))}
         </div>
       )}

@@ -21,3 +21,11 @@ export const createPatient = async (
   const { data } = await client.post<Patient>('/patients', patient);
   return data;
 };
+
+export const updatePatient = async (
+  id: string,
+  patient: Partial<Omit<Patient, '_id' | 'mrn' | 'createdAt' | 'updatedAt'>>
+): Promise<Patient> => {
+  const { data } = await client.patch<Patient>(`/patients/${id}`, patient);
+  return data;
+};

@@ -35,6 +35,7 @@ export interface DialysisSession {
   sessionDurationMinutes?: number;
   targetDurationMinutes: number;
   nurseNotes?: string;
+  queuePosition?: number;
   anomalies: Anomaly[];
   createdAt: string;
   updatedAt: string;
