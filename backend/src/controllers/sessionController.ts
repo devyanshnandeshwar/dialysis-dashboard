@@ -6,7 +6,7 @@ import detectAnomalies from '../utils/anomalyDetector';
 
 /**
  * POST /api/sessions — record a new dialysis session.
- * Runs anomaly detection before saving.
+ * Captures start-of-session data only.
  */
 export const createSession = async (
   req: Request,
@@ -21,12 +21,8 @@ export const createSession = async (
       machineId,
       nurseId,
       preWeight,
-      postWeight,
       preBloodPressure,
-      postBloodPressure,
-      sessionDurationMinutes,
       targetDurationMinutes,
-      nurseNotes,
     } = req.body;
 
     // Fetch the patient for dry weight (needed by anomaly detector)
@@ -40,7 +36,7 @@ export const createSession = async (
     const now = new Date(scheduledDate);
     const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000);
-    
+
     const todayCount = await DialysisSession.countDocuments({
       scheduledDate: { $gte: startOfDay, $lt: endOfDay }
     });
@@ -52,24 +48,100 @@ export const createSession = async (
       machineId,
       nurseId,
       preWeight,
-      postWeight,
       preBloodPressure,
-      postBloodPressure,
-      sessionDurationMinutes,
+      postWeight: null,
+      postBloodPressure: null,
+      sessionDurationMinutes: null,
       targetDurationMinutes: targetDurationMinutes ?? 240,
-      nurseNotes,
+      nurseNotes: null,
       queuePosition: todayCount + 1,
+      anomalies: [],
     };
 
-    // Run anomaly detection
-    const anomalies = detectAnomalies(sessionData, patient, anomalyConfig);
-
-    const session = await DialysisSession.create({
-      ...sessionData,
-      anomalies,
-    });
+    const session = await DialysisSession.create(sessionData);
 
     res.status(201).json(session);
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * PATCH /api/sessions/:id — update session status (used to start session).
+ */
+export const updateSession = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const session = await DialysisSession.findByIdAndUpdate(
+      req.params.id,
+      { status: req.body.status },
+      { new: true, runValidators: true }
+    ).populate('patientId', 'name mrn dryWeight');
+
+    if (!session) {
+      res.status(404).json({ error: 'Session not found' });
+      return;
+    }
+
+    res.json(session);
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * PATCH /api/sessions/:id/complete — complete session and detect anomalies.
+ */
+export const completeSession = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { postWeight, postBloodPressure, sessionDurationMinutes, nurseNotes } = req.body;
+
+    const session = await DialysisSession.findById(req.params.id).populate(
+      'patientId',
+      'name mrn dryWeight'
+    );
+
+    if (!session) {
+      res.status(404).json({ error: 'Session not found' });
+      return;
+    }
+
+    const patient = session.patientId as unknown as { dryWeight: number };
+
+    session.postWeight = postWeight;
+    session.postBloodPressure = postBloodPressure;
+    session.sessionDurationMinutes = sessionDurationMinutes;
+    session.nurseNotes = nurseNotes ?? session.nurseNotes ?? null;
+    session.status = 'completed';
+
+    const anomalies = detectAnomalies(
+      {
+        ...(session.preWeight != null ? { preWeight: session.preWeight } : {}),
+        postWeight,
+        postBloodPressure,
+        sessionDurationMinutes,
+        targetDurationMinutes: session.targetDurationMinutes,
+      },
+      { dryWeight: patient.dryWeight },
+      anomalyConfig
+    );
+
+    session.anomalies = anomalies;
+    await session.save();
+
+    const populated = await DialysisSession.findById(session._id).populate(
+      'patientId',
+      'name mrn dryWeight'
+    );
+
+    res.json(populated);
   } catch (err) {
     next(err);
   }

@@ -18,12 +18,12 @@ export interface IDialysisSession extends Document {
   machineId?: string;
   nurseId?: string;
   preWeight?: number;
-  postWeight?: number;
+  postWeight?: number | null;
   preBloodPressure?: IBloodPressure;
-  postBloodPressure?: IBloodPressure;
-  sessionDurationMinutes?: number;
+  postBloodPressure?: IBloodPressure | null;
+  sessionDurationMinutes?: number | null;
   targetDurationMinutes: number;
-  nurseNotes?: string;
+  nurseNotes?: string | null;
   queuePosition?: number;
   anomalies: IAnomaly[];
 }

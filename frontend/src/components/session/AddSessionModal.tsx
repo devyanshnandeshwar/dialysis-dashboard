@@ -9,7 +9,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -40,15 +39,10 @@ export default function AddSessionModal({ onSessionCreated }: Props) {
     new Date().toISOString().split('T')[0]!
   );
   const [preWeight, setPreWeight] = useState('');
-  const [postWeight, setPostWeight] = useState('');
   const [preBpSystolic, setPreBpSystolic] = useState('');
   const [preBpDiastolic, setPreBpDiastolic] = useState('');
-  const [postBpSystolic, setPostBpSystolic] = useState('');
-  const [postBpDiastolic, setPostBpDiastolic] = useState('');
-  const [sessionDuration, setSessionDuration] = useState('');
   const [targetDuration, setTargetDuration] = useState('240');
   const [status, setStatus] = useState('not_started');
-  const [nurseNotes, setNurseNotes] = useState('');
 
   useEffect(() => {
     if (open) {
@@ -61,7 +55,20 @@ export default function AddSessionModal({ onSessionCreated }: Props) {
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
     if (!patientId) newErrors.patientId = 'Patient is required';
+    if (!machineId.trim()) newErrors.machineId = 'Machine ID is required';
     if (!scheduledDate) newErrors.scheduledDate = 'Date is required';
+    if (!targetDuration || Number(targetDuration) <= 0) {
+      newErrors.targetDuration = 'Target duration is required';
+    }
+    if (!preWeight || Number(preWeight) <= 0) {
+      newErrors.preWeight = 'Pre-session weight is required';
+    }
+    if (!preBpSystolic || Number(preBpSystolic) <= 0) {
+      newErrors.preBpSystolic = 'Systolic BP is required';
+    }
+    if (!preBpDiastolic || Number(preBpDiastolic) <= 0) {
+      newErrors.preBpDiastolic = 'Diastolic BP is required';
+    }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -71,15 +78,10 @@ export default function AddSessionModal({ onSessionCreated }: Props) {
     setMachineId('');
     setScheduledDate(new Date().toISOString().split('T')[0]!);
     setPreWeight('');
-    setPostWeight('');
     setPreBpSystolic('');
     setPreBpDiastolic('');
-    setPostBpSystolic('');
-    setPostBpDiastolic('');
-    setSessionDuration('');
     setTargetDuration('240');
     setStatus('not_started');
-    setNurseNotes('');
     setErrors({});
   };
 
@@ -90,33 +92,19 @@ export default function AddSessionModal({ onSessionCreated }: Props) {
     try {
       const body: Record<string, unknown> = {
         patientId,
+        machineId: machineId.trim(),
         scheduledDate: new Date(scheduledDate).toISOString(),
         status,
         targetDurationMinutes: Number(targetDuration),
-      };
-
-      if (machineId) body.machineId = machineId;
-      if (preWeight) body.preWeight = Number(preWeight);
-      if (postWeight) body.postWeight = Number(postWeight);
-      if (sessionDuration)
-        body.sessionDurationMinutes = Number(sessionDuration);
-      if (nurseNotes) body.nurseNotes = nurseNotes;
-
-      if (preBpSystolic && preBpDiastolic) {
-        body.preBloodPressure = {
+        preWeight: Number(preWeight),
+        preBloodPressure: {
           systolic: Number(preBpSystolic),
           diastolic: Number(preBpDiastolic),
-        };
-      }
-      if (postBpSystolic && postBpDiastolic) {
-        body.postBloodPressure = {
-          systolic: Number(postBpSystolic),
-          diastolic: Number(postBpDiastolic),
-        };
-      }
-
+        },
+      };
       await createSession(body as Parameters<typeof createSession>[0]);
-      toast.success('Session recorded');
+      const selectedPatient = patients.find((p) => p._id === patientId);
+      toast.success(`Session started for ${selectedPatient?.name ?? 'patient'}`);
       resetForm();
       setOpen(false);
       onSessionCreated();
@@ -173,13 +161,16 @@ export default function AddSessionModal({ onSessionCreated }: Props) {
           {/* Machine ID + Date */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label className="text-[10px] tracking-widest text-text-muted uppercase font-bold">Machine ID</Label>
+              <Label className="text-[10px] tracking-widest text-text-muted uppercase font-bold">Machine ID *</Label>
               <Input
                 value={machineId}
                 onChange={(e) => setMachineId(e.target.value)}
                 placeholder="M-101"
                 className={fieldClass}
               />
+              {errors.machineId && (
+                <p className="text-xs text-critical">{errors.machineId}</p>
+              )}
             </div>
             <div className="space-y-1.5">
               <Label className="text-[10px] tracking-widest text-text-muted uppercase font-bold">
@@ -197,105 +188,66 @@ export default function AddSessionModal({ onSessionCreated }: Props) {
             </div>
           </div>
 
-          {/* Weights */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label className="text-[10px] tracking-widest text-text-muted uppercase font-bold">Pre-weight (kg)</Label>
-              <Input
-                type="number"
-                step="0.1"
-                value={preWeight}
-                onChange={(e) => setPreWeight(e.target.value)}
-                placeholder="75.0"
-                className={fieldClass}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-[10px] tracking-widest text-text-muted uppercase font-bold">
-                Post-weight (kg)
-              </Label>
-              <Input
-                type="number"
-                step="0.1"
-                value={postWeight}
-                onChange={(e) => setPostWeight(e.target.value)}
-                placeholder="72.5"
-                className={fieldClass}
-              />
-            </div>
-          </div>
-
-          {/* Pre-BP */}
+          {/* Target Duration */}
           <div className="space-y-1.5">
             <Label className="text-[10px] tracking-widest text-text-muted uppercase font-bold">
-              Pre-Blood Pressure (mmHg)
+              Target Duration (min) *
             </Label>
-            <div className="grid grid-cols-2 gap-3">
-              <Input
-                type="number"
-                value={preBpSystolic}
-                onChange={(e) => setPreBpSystolic(e.target.value)}
-                placeholder="Systolic"
-                className={fieldClass}
-              />
-              <Input
-                type="number"
-                value={preBpDiastolic}
-                onChange={(e) => setPreBpDiastolic(e.target.value)}
-                placeholder="Diastolic"
-                className={fieldClass}
-              />
-            </div>
+            <Input
+              type="number"
+              value={targetDuration}
+              onChange={(e) => setTargetDuration(e.target.value)}
+              className={fieldClass}
+            />
+            {errors.targetDuration && (
+              <p className="text-xs text-critical">{errors.targetDuration}</p>
+            )}
           </div>
 
-          {/* Post-BP */}
+          {/* Pre-Session Weight */}
           <div className="space-y-1.5">
-            <Label className="text-[10px] tracking-widest text-text-muted uppercase font-bold">
-              Post-Blood Pressure (mmHg)
-            </Label>
-            <div className="grid grid-cols-2 gap-3">
-              <Input
-                type="number"
-                value={postBpSystolic}
-                onChange={(e) => setPostBpSystolic(e.target.value)}
-                placeholder="Systolic"
-                className={fieldClass}
-              />
-              <Input
-                type="number"
-                value={postBpDiastolic}
-                onChange={(e) => setPostBpDiastolic(e.target.value)}
-                placeholder="Diastolic"
-                className={fieldClass}
-              />
-            </div>
+            <Label className="text-[10px] tracking-widest text-text-muted uppercase font-bold">Pre-Session Weight (kg) *</Label>
+            <Input
+              type="number"
+              step="0.1"
+              value={preWeight}
+              onChange={(e) => setPreWeight(e.target.value)}
+              placeholder="75.0"
+              className={fieldClass}
+            />
+            {errors.preWeight && (
+              <p className="text-xs text-critical">{errors.preWeight}</p>
+            )}
           </div>
 
-          {/* Duration */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label className="text-[10px] tracking-widest text-text-muted uppercase font-bold">
-                Session Duration (min)
-              </Label>
-              <Input
-                type="number"
-                value={sessionDuration}
-                onChange={(e) => setSessionDuration(e.target.value)}
-                placeholder="240"
-                className={fieldClass}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-[10px] tracking-widest text-text-muted uppercase font-bold">
-                Target Duration (min)
-              </Label>
-              <Input
-                type="number"
-                value={targetDuration}
-                onChange={(e) => setTargetDuration(e.target.value)}
-                className={fieldClass}
-              />
-            </div>
+          {/* Pre-BP Systolic */}
+          <div className="space-y-1.5">
+            <Label className="text-[10px] tracking-widest text-text-muted uppercase font-bold">Pre-BP Systolic *</Label>
+            <Input
+              type="number"
+              value={preBpSystolic}
+              onChange={(e) => setPreBpSystolic(e.target.value)}
+              placeholder="Systolic"
+              className={fieldClass}
+            />
+            {errors.preBpSystolic && (
+              <p className="text-xs text-critical">{errors.preBpSystolic}</p>
+            )}
+          </div>
+
+          {/* Pre-BP Diastolic */}
+          <div className="space-y-1.5">
+            <Label className="text-[10px] tracking-widest text-text-muted uppercase font-bold">Pre-BP Diastolic *</Label>
+            <Input
+              type="number"
+              value={preBpDiastolic}
+              onChange={(e) => setPreBpDiastolic(e.target.value)}
+              placeholder="Diastolic"
+              className={fieldClass}
+            />
+            {errors.preBpDiastolic && (
+              <p className="text-xs text-critical">{errors.preBpDiastolic}</p>
+            )}
           </div>
 
           {/* Status */}
@@ -312,23 +264,8 @@ export default function AddSessionModal({ onSessionCreated }: Props) {
                 <SelectItem value="in_progress" className="text-text-primary focus:bg-surface-alt">
                   In Progress
                 </SelectItem>
-                <SelectItem value="completed" className="text-text-primary focus:bg-surface-alt">
-                  Completed
-                </SelectItem>
               </SelectContent>
             </Select>
-          </div>
-
-          {/* Notes */}
-          <div className="space-y-1.5">
-            <Label className="text-[10px] tracking-widest text-text-muted uppercase font-bold">Nurse Notes</Label>
-            <Textarea
-              value={nurseNotes}
-              onChange={(e) => setNurseNotes(e.target.value)}
-              placeholder="Optional clinical notes..."
-              rows={3}
-              className={fieldClass}
-            />
           </div>
 
           {/* Submit */}
@@ -340,10 +277,10 @@ export default function AddSessionModal({ onSessionCreated }: Props) {
             {submitting ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Recording...
+                Starting...
               </>
             ) : (
-              'Record Session'
+              'Start Session'
             )}
           </Button>
         </div>

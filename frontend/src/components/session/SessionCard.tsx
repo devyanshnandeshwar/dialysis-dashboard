@@ -3,8 +3,11 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import StatusBadge from '@/components/ui/StatusBadge';
 import NotesEditor from '@/components/session/NotesEditor';
+import CompleteSessionModal from '@/components/session/CompleteSessionModal';
 import EditPatientModal from '@/components/patient/EditPatientModal';
 import { Weight, HeartPulse, Clock, ChevronDown, ChevronUp, Loader2, AlertTriangle } from 'lucide-react';
+import { startSession } from '@/api/sessions';
+import { toast } from 'sonner';
 import type { DialysisSession, Patient } from '@/types';
 
 function getBorderColor(session: DialysisSession): string {
@@ -26,6 +29,7 @@ interface SessionCardProps {
   onMoveUp?: (id: string) => void;
   onMoveDown?: (id: string) => void;
   onPatientUpdated?: (patientId: string, updatedPatient: Patient) => void;
+  onSessionUpdated?: () => Promise<void> | void;
 }
 
 const SessionCard = React.memo(function SessionCard({
@@ -36,10 +40,12 @@ const SessionCard = React.memo(function SessionCard({
   isMoving,
   onMoveUp,
   onMoveDown,
-  onPatientUpdated
+  onPatientUpdated,
+  onSessionUpdated
 }: SessionCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [currentNotes, setCurrentNotes] = useState(session.nurseNotes || '');
+  const [starting, setStarting] = useState(false);
   const patient = session.patientId as Patient;
 
   // Track previous position for flip animation
@@ -71,13 +77,37 @@ const SessionCard = React.memo(function SessionCard({
   };
 
   const isNotStarted = session.status === 'not_started';
+  const isInProgress = session.status === 'in_progress';
+  const isCompleted = session.status === 'completed';
+
+  const handleStartSession = async () => {
+    try {
+      setStarting(true);
+      await startSession(session._id);
+      toast.success('Session moved to in progress');
+      await onSessionUpdated?.();
+    } catch {
+      toast.error('Failed to start session');
+    } finally {
+      setStarting(false);
+    }
+  };
 
   return (
     <Card
       ref={cardRef}
-      className={`group bg-surface border border-border rounded-xl border-l-[6px] ${getBorderColor(session)} transition-all hover:bg-surface-hover hover:border-border-subtle shadow-[0_1px_3px_rgba(0,0,0,0.4)] ${isMoving ? 'opacity-60 ring-2 ring-accent ring-offset-2 ring-offset-bg queue-swap-flash' : ''}`}
+      className={`group relative bg-surface border border-border rounded-xl border-l-[6px] ${getBorderColor(session)} transition-all hover:bg-surface-hover hover:border-border-subtle shadow-[0_1px_3px_rgba(0,0,0,0.4)] ${isMoving ? 'opacity-60 ring-2 ring-accent ring-offset-2 ring-offset-bg queue-swap-flash' : ''}`}
     >
       <CardContent className="p-0">
+        {onPatientUpdated && (
+          <div className="absolute right-2 top-2 z-20">
+            <EditPatientModal
+              patient={patient}
+              onPatientUpdated={(updated) => onPatientUpdated(patient._id, updated)}
+            />
+          </div>
+        )}
+
         <div className="flex w-full items-stretch min-h-24">
 
           {/* Queue Left Fixed Section */}
@@ -191,14 +221,35 @@ const SessionCard = React.memo(function SessionCard({
             )}
           </div>
 
-          {/* Right Action Icons */}
+          {/* Right Action Panel */}
           <div className="shrink-0 flex flex-col justify-between items-center px-4 py-3 border-l border-border-subtle bg-surface-alt/40 rounded-r-xl">
-            <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-              {onPatientUpdated && (
-                <EditPatientModal
-                  patient={patient}
-                  onPatientUpdated={(updated) => onPatientUpdated(patient._id, updated)}
-                />
+            <div className="min-h-8 flex items-center">
+              {isNotStarted && (
+                <Button
+                  size="sm"
+                  onClick={handleStartSession}
+                  disabled={starting}
+                  className="bg-surface border border-border text-text-primary hover:bg-surface-hover"
+                >
+                  {starting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+                      Starting
+                    </>
+                  ) : (
+                    'Start Session'
+                  )}
+                </Button>
+              )}
+
+              {isInProgress && (
+                <CompleteSessionModal session={session} onCompleted={() => onSessionUpdated?.()} />
+              )}
+
+              {isCompleted && (
+                <span className="text-[11px] uppercase tracking-wide text-text-secondary font-semibold">
+                  Completed {formatTime(session.updatedAt)}
+                </span>
               )}
             </div>
             <Button

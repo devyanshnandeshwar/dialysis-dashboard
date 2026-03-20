@@ -195,6 +195,7 @@ export default function TodaySchedule() {
               onMoveUp={() => handleMoveUp(session._id, index)}
               onMoveDown={() => handleMoveDown(session._id, index)}
               onPatientUpdated={handlePatientUpdated}
+              onSessionUpdated={fetchSessions}
             />
           ))}
         </div>

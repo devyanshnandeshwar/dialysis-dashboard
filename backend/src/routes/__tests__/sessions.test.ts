@@ -43,20 +43,25 @@ describe('Session API Routes', () => {
     jest.restoreAllMocks();
   });
 
-  it('POST /api/sessions with valid body -> 201 with anomalies array', async () => {
+  it('POST /api/sessions with valid body -> 201 with empty anomalies', async () => {
     const res = await request(app)
       .post('/api/sessions')
       .send({
         patientId: 'mock-patient-id',
+        machineId: 'M-100',
         scheduledDate: new Date().toISOString(),
         status: 'in_progress',
-        preWeight: 75
+        targetDurationMinutes: 240,
+        preWeight: 75,
+        preBloodPressure: {
+          systolic: 140,
+          diastolic: 90,
+        },
       });
 
     expect(res.status).toBe(201);
     expect(res.body).toHaveProperty('_id', 'mock-session-id');
-    expect(res.body.anomalies).toHaveLength(1);
-    expect(res.body.anomalies[0].type).toBe('mock_anomaly');
+    expect(res.body.anomalies).toHaveLength(0);
   });
 
   it('POST /api/sessions missing patientId -> 400', async () => {

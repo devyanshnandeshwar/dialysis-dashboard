@@ -35,12 +35,12 @@ export interface DialysisSession {
   machineId?: string;
   nurseId?: string;
   preWeight?: number;
-  postWeight?: number;
+  postWeight?: number | null;
   preBloodPressure?: BloodPressure;
-  postBloodPressure?: BloodPressure;
-  sessionDurationMinutes?: number;
+  postBloodPressure?: BloodPressure | null;
+  sessionDurationMinutes?: number | null;
   targetDurationMinutes: number;
-  nurseNotes?: string;
+  nurseNotes?: string | null;
   queuePosition?: number;
   anomalies: Anomaly[];
   createdAt: string;
