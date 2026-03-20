@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import StatusBadge from '@/components/ui/StatusBadge';
@@ -28,7 +28,7 @@ interface SessionCardProps {
   onPatientUpdated?: (patientId: string, updatedPatient: Patient) => void;
 }
 
-export default function SessionCard({ 
+const SessionCard = React.memo(function SessionCard({ 
   session, 
   sequenceNumber,
   isFirst, 
@@ -224,4 +224,6 @@ export default function SessionCard({
       </CardContent>
     </Card>
   );
-}
+});
+
+export default SessionCard;

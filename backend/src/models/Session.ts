@@ -106,6 +106,9 @@ const DialysisSessionSchema = new Schema<IDialysisSession>(
   }
 );
 
+DialysisSessionSchema.index({ scheduledDate: 1, queuePosition: 1 });
+DialysisSessionSchema.index({ patientId: 1 });
+
 const DialysisSession = mongoose.model<IDialysisSession>(
   'DialysisSession',
   DialysisSessionSchema

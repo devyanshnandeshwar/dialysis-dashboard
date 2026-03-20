@@ -32,15 +32,15 @@ export default function TodaySchedule() {
     fetchSessions();
   }, [fetchSessions]);
 
-  const handleMoveUp = async (id: string, index: number) => {
+  const handleMoveUp = useCallback(async (id: string, index: number) => {
     if (index === 0) return;
     await handleReorder(id, 'up', index, index - 1);
-  };
+  }, []);
 
-  const handleMoveDown = async (id: string, index: number) => {
+  const handleMoveDown = useCallback(async (id: string, index: number) => {
     if (index === sessions.length - 1) return;
     await handleReorder(id, 'down', index, index + 1);
-  };
+  }, [sessions.length]);
 
   const handleReorder = async (
     id: string, 
@@ -73,14 +73,14 @@ export default function TodaySchedule() {
     }
   };
 
-  const handlePatientUpdated = (patientId: string, updatedPatient: Patient) => {
+  const handlePatientUpdated = useCallback((patientId: string, updatedPatient: Patient) => {
     setSessions(prev => prev.map(session => {
       if ((session.patientId as Patient)._id === patientId) {
         return { ...session, patientId: updatedPatient };
       }
       return session;
     }));
-  };
+  }, []);
 
   const filtered = sessions.filter((s) => {
     if (filter === 'anomalies') return s.anomalies.length > 0;

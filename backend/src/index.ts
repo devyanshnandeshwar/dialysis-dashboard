@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import compression from 'compression';
 import dotenv from 'dotenv';
 import connectDB from './config/db';
 import patientRoutes from './routes/patientRoutes';
@@ -13,6 +14,7 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 app.use(helmet());
+app.use(compression());
 app.use(cors());
 app.use(express.json());
 
