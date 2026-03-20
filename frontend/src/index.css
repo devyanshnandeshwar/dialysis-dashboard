@@ -25,21 +25,45 @@
   --color-success-bg: rgba(34, 201, 122, 0.1);
 }
 
+.light {
+  --color-bg: #f4f6fb;
+  --color-surface: #ffffff;
+  --color-surface-alt: #f0f2f8;
+  --color-surface-hover: #e8ecf5;
+  --color-border: #e2e6f0;
+  --color-border-subtle: #edf0f7;
+  --color-text-primary: #0f1523;
+  --color-text-secondary: #4a5568;
+  --color-text-muted: #9aa3b2;
+  --color-accent: #3b7ef4;
+  --color-accent-glow: rgba(59, 126, 244, 0.12);
+  --color-warning: #d97706;
+  --color-warning-bg: rgba(217, 119, 6, 0.08);
+  --color-critical: #dc2626;
+  --color-critical-bg: rgba(220, 38, 38, 0.08);
+  --color-success: #16a34a;
+  --color-success-bg: rgba(22, 163, 74, 0.08);
+}
+
 body {
   background: var(--color-bg);
   color: var(--color-text-primary);
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: "Inter", system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   margin: 0;
 }
 
 @keyframes shimmer {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 html {
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: "Inter", system-ui, sans-serif;
 }
 
 /* Shadcn radix variables mapped to dark theme */
