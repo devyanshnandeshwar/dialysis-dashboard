@@ -6,7 +6,7 @@ import {
   getTodaySessions,
   updateNurseNotes,
   getSessionById,
-  updateQueuePosition,
+  reorderQueue,
 } from '../controllers/sessionController';
 
 const router = Router();
@@ -32,11 +32,6 @@ router.post(
 router.get('/today', getTodaySessions);
 
 /**
- * GET /api/sessions/:id — single session detail
- */
-router.get('/:id', getSessionById);
-
-/**
  * PATCH /api/sessions/:id/notes — update nurse notes
  */
 router.patch('/:id/notes', updateNurseNotes);
@@ -44,6 +39,11 @@ router.patch('/:id/notes', updateNurseNotes);
 /**
  * PATCH /api/sessions/:id/queue — update queue position
  */
-router.patch('/:id/queue', updateQueuePosition);
+router.patch('/:id/queue', reorderQueue);
+
+/**
+ * GET /api/sessions/:id — single session detail
+ */
+router.get('/:id', getSessionById);
 
 export default router;

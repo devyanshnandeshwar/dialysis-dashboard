@@ -158,58 +158,64 @@ export const getSessionById = async (
  * Body: { direction: 'up' | 'down' }
  * Returns the full updated schedule.
  */
-export const updateQueuePosition = async (
+export const reorderQueue = async (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const { direction } = req.body;
+    const { id } = req.params;
+    const { direction } = req.body; // 'up' or 'down'
 
-    if (direction !== 'up' && direction !== 'down') {
-      res.status(400).json({ error: 'direction must be "up" or "down"' });
+    console.log('Reorder request:', id, direction);
+
+    // Get the session to move
+    const session = await DialysisSession.findById(id);
+    if (!session) {
+      res.status(404).json({ error: 'Session not found' });
       return;
     }
 
-    const session = await DialysisSession.findById(req.params.id);
-    if (!session || !session.queuePosition) {
-      res.status(404).json({ error: 'Session not found or has no queuePosition' });
+    // Get today's date range
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999);
+
+    // Get all today's sessions sorted by queuePosition
+    const todaySessions = await DialysisSession.find({
+      scheduledDate: { $gte: startOfDay, $lte: endOfDay }
+    }).sort({ queuePosition: 1 });
+
+    // Find index of current session
+    const currentIndex = todaySessions.findIndex(s => s._id.toString() === id);
+    if (currentIndex === -1) {
+      res.status(404).json({ error: 'Session not in today schedule' });
       return;
     }
 
-    // Get today's date range to only swap within same day
-    const sessionDate = new Date(session.scheduledDate);
-    const startOfDay = new Date(sessionDate.getFullYear(), sessionDate.getMonth(), sessionDate.getDate());
-    const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000);
-
-    const currentPos = session.queuePosition;
-    const targetPos = direction === 'up' ? currentPos - 1 : currentPos + 1;
-
-    // Find the session currently at the target position
-    const adjacentSession = await DialysisSession.findOne({
-      scheduledDate: { $gte: startOfDay, $lt: endOfDay },
-      queuePosition: targetPos,
-    });
-
-    if (adjacentSession) {
-      // Swap positions
-      adjacentSession.queuePosition = currentPos;
-      session.queuePosition = targetPos;
-      
-      await Promise.all([
-        adjacentSession.save(),
-        session.save()
-      ]);
+    // Determine swap target
+    const swapIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+    if (swapIndex < 0 || swapIndex >= todaySessions.length) {
+      res.status(400).json({ error: 'Cannot move further in that direction' });
+      return;
     }
 
-    // Return full sorted schedule
-    const sessions = await DialysisSession.find({
-      scheduledDate: { $gte: startOfDay, $lt: endOfDay },
+    // Swap queuePositions
+    const currentPos = todaySessions[currentIndex].queuePosition;
+    const swapPos = todaySessions[swapIndex].queuePosition;
+
+    await DialysisSession.findByIdAndUpdate(todaySessions[currentIndex]._id, { queuePosition: swapPos });
+    await DialysisSession.findByIdAndUpdate(todaySessions[swapIndex]._id, { queuePosition: currentPos });
+
+    // Return updated today's schedule
+    const updated = await DialysisSession.find({
+      scheduledDate: { $gte: startOfDay, $lte: endOfDay }
     })
       .populate('patientId', 'name mrn dryWeight')
-      .sort({ queuePosition: 1, createdAt: 1 });
+      .sort({ queuePosition: 1 });
 
-    res.json(sessions);
+    res.json(updated);
   } catch (err) {
     next(err);
   }
