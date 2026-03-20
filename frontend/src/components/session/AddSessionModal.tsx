@@ -19,16 +19,24 @@ import {
 import axios from 'axios';
 import { Plus, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { getPatients } from '@/api/patients';
+import { getPatients, invalidatePatientsCache } from '@/api/patients';
 import { getMachines } from '@/api/machines';
 import { createSession } from '@/api/sessions';
 import type { Patient, HDMachine } from '@/types';
 
 interface Props {
   onSessionCreated: () => void;
+  preselectedPatientId?: string;
+  lockPatient?: boolean;
+  triggerLabel?: string;
 }
 
-export default function AddSessionModal({ onSessionCreated }: Props) {
+export default function AddSessionModal({
+  onSessionCreated,
+  preselectedPatientId,
+  lockPatient = false,
+  triggerLabel = 'Add Session',
+}: Props) {
   const [open, setOpen] = useState(false);
   const [patients, setPatients] = useState<Patient[]>([]);
   const [machines, setMachines] = useState<HDMachine[]>([]);
@@ -50,6 +58,11 @@ export default function AddSessionModal({ onSessionCreated }: Props) {
 
   useEffect(() => {
     if (open) {
+      setScheduledDate(new Date().toISOString().split('T')[0]!);
+      if (preselectedPatientId) {
+        setPatientId(preselectedPatientId);
+      }
+
       getPatients()
         .then(setPatients)
         .catch(() => toast.error('Failed to load patients'));
@@ -64,7 +77,7 @@ export default function AddSessionModal({ onSessionCreated }: Props) {
         .catch(() => toast.error('Failed to load machines'))
         .finally(() => setMachinesLoading(false));
     }
-  }, [open]);
+  }, [open, preselectedPatientId]);
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -117,6 +130,7 @@ export default function AddSessionModal({ onSessionCreated }: Props) {
         },
       };
       await createSession(body as Parameters<typeof createSession>[0]);
+      invalidatePatientsCache();
       const selectedPatient = patients.find((p) => p._id === patientId);
       toast.success(`Session started for ${selectedPatient?.name ?? 'patient'}`);
       resetForm();
@@ -145,7 +159,7 @@ export default function AddSessionModal({ onSessionCreated }: Props) {
           className="bg-accent text-white hover:brightness-110 shadow-sm font-medium gap-1.5"
         >
           <Plus className="w-4 h-4" />
-          Add Session
+          {triggerLabel}
         </Button>
       </DialogTrigger>
 
@@ -160,7 +174,7 @@ export default function AddSessionModal({ onSessionCreated }: Props) {
           {/* Patient */}
           <div className="space-y-1.5">
             <Label className="text-[10px] tracking-widest text-text-muted uppercase font-bold">Patient *</Label>
-            <Select value={patientId} onValueChange={setPatientId}>
+            <Select value={patientId} onValueChange={setPatientId} disabled={lockPatient}>
               <SelectTrigger className={`w-full ${fieldClass}`}>
                 <SelectValue placeholder="Select patient" />
               </SelectTrigger>

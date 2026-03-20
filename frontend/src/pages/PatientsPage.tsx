@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Users, Search, Loader2, AlertTriangle } from 'lucide-react';
 import AddPatientModal from '@/components/patient/AddPatientModal';
+import AddSessionModal from '@/components/session/AddSessionModal';
 import EditPatientModal from '@/components/patient/EditPatientModal';
 import PatientHistoryModal from '@/components/patient/PatientHistoryModal';
 import StatusBadge from '@/components/ui/StatusBadge';
@@ -23,6 +24,13 @@ const gradients = [
 function getGradientForName(name: string) {
   const hash = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
   return gradients[hash % gradients.length];
+}
+
+function getTodayStatusLabel(status?: 'not_started' | 'in_progress' | 'completed') {
+  if (status === 'not_started') return 'Today: Scheduled';
+  if (status === 'in_progress') return 'Today: In Progress';
+  if (status === 'completed') return 'Today: Completed';
+  return null;
 }
 
 export default function PatientsPage() {
@@ -54,7 +62,13 @@ export default function PatientsPage() {
 
   const handlePatientCreated = (created: Patient) => {
     // New patient won't have aggregated fields yet, provide defaults locally
-    const newPatient = { ...created, totalSessions: 0, lastAnomalies: [], lastSession: null };
+    const newPatient = {
+      ...created,
+      totalSessions: 0,
+      lastAnomalies: [],
+      lastSession: null,
+      todaySession: null,
+    };
     setPatients(prev => [newPatient, ...prev]);
   };
 
@@ -156,7 +170,14 @@ export default function PatientsPage() {
                       {initial}
                     </div>
                     <div>
-                      <h3 className="text-base font-bold text-text-primary tracking-tight">{patient.name}</h3>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="text-base font-bold text-text-primary tracking-tight">{patient.name}</h3>
+                        {patient.todaySession?.status && (
+                          <span className="text-[10px] px-2 py-0.5 rounded-full border border-border-subtle bg-surface-alt text-text-secondary font-semibold uppercase tracking-wide">
+                            {getTodayStatusLabel(patient.todaySession.status)}
+                          </span>
+                        )}
+                      </div>
                       <div className="text-xs text-text-secondary font-mono tracking-wide mt-1">{patient.mrn}</div>
                     </div>
                   </div>
@@ -209,6 +230,18 @@ export default function PatientsPage() {
 
                   {/* Action Buttons */}
                   <div className="flex md:flex-col gap-2 shrink-0 pt-3 md:pt-0 pl-1 mt-2 md:mt-0 justify-center items-center">
+                    {patient.todaySession ? (
+                      <span className="text-[10px] px-2 py-1 rounded-full border border-success/40 bg-success-bg text-success font-semibold uppercase tracking-wide">
+                        Scheduled
+                      </span>
+                    ) : (
+                      <AddSessionModal
+                        onSessionCreated={fetchPatients}
+                        preselectedPatientId={patient._id}
+                        lockPatient
+                        triggerLabel="Schedule Today"
+                      />
+                    )}
                     <div className="opacity-80 hover:opacity-100 transition-opacity">
                       <PatientHistoryModal patient={patient} />
                     </div>

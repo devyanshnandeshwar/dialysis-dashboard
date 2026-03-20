@@ -39,7 +39,11 @@ export const getPatients = async (
 ) => {
   try {
     const patients = await Patient.find().sort({ createdAt: -1 }).lean();
-    
+
+    const now = new Date();
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000);
+
     // Get session stats per patient
     const stats = await DialysisSession.aggregate([
       { $sort: { scheduledDate: -1, createdAt: -1 } },
@@ -54,8 +58,34 @@ export const getPatients = async (
 
     const statsMap = new Map(stats.map(s => [s._id.toString(), s]));
 
+    const todaySessions = await DialysisSession.find(
+      {
+        scheduledDate: { $gte: startOfDay, $lt: endOfDay },
+      },
+      {
+        patientId: 1,
+        status: 1,
+        machineId: 1,
+      }
+    )
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const todaySessionMap = new Map<string, { sessionId: string; status: string; machineId: string | null }>();
+    for (const session of todaySessions) {
+      const key = session.patientId.toString();
+      if (!todaySessionMap.has(key)) {
+        todaySessionMap.set(key, {
+          sessionId: session._id.toString(),
+          status: session.status,
+          machineId: session.machineId || null,
+        });
+      }
+    }
+
     const enrichedPatients = patients.map(p => {
       const pStats = statsMap.get(p._id.toString());
+      const todaySession = todaySessionMap.get(p._id.toString()) || null;
       return {
         ...p,
         totalSessions: pStats?.totalSessions || 0,
@@ -64,6 +94,7 @@ export const getPatients = async (
           status: pStats.lastSessionDetails.status,
         } : null,
         lastAnomalies: pStats?.lastSessionDetails.anomalies || [],
+        todaySession,
       };
     });
 

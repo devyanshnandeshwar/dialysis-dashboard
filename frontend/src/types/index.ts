@@ -32,6 +32,11 @@ export interface Patient {
     status: 'not_started' | 'in_progress' | 'completed';
   } | null;
   lastAnomalies?: Anomaly[];
+  todaySession?: {
+    sessionId: string;
+    status: 'not_started' | 'in_progress' | 'completed';
+    machineId: string | null;
+  } | null;
 }
 
 export interface DialysisSession {
