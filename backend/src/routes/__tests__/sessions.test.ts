@@ -24,6 +24,7 @@ describe('Session API Routes', () => {
     } as any);
 
     jest.spyOn(DialysisSession, 'countDocuments').mockResolvedValue(0);
+    jest.spyOn(DialysisSession, 'findOne').mockResolvedValue(null);
 
     jest.spyOn(DialysisSession, 'create').mockImplementation((data: any) => Promise.resolve({
       _id: 'mock-session-id',
@@ -48,7 +49,7 @@ describe('Session API Routes', () => {
       .post('/api/sessions')
       .send({
         patientId: 'mock-patient-id',
-        machineId: 'M-100',
+        machineId: 'HD-01',
         scheduledDate: new Date().toISOString(),
         status: 'in_progress',
         targetDurationMinutes: 240,

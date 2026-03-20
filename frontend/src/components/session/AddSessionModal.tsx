@@ -56,6 +56,9 @@ export default function AddSessionModal({
   const [targetDuration, setTargetDuration] = useState('240');
   const [status, setStatus] = useState('not_started');
 
+  const availableMachines = machines.filter((machine) => machine.status === 'available');
+  const allMachinesInUse = machines.length > 0 && availableMachines.length === 0;
+
   useEffect(() => {
     if (open) {
       setScheduledDate(new Date().toISOString().split('T')[0]!);
@@ -194,7 +197,9 @@ export default function AddSessionModal({
           {/* Machine ID + Date */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label className="text-[10px] tracking-widest text-text-muted uppercase font-bold">Machine ID *</Label>
+              <Label className="text-[10px] tracking-widest text-text-muted uppercase font-bold">
+                Machine ID <span className="text-critical">*</span>
+              </Label>
               <Select value={machineId} onValueChange={setMachineId} disabled={machinesLoading}>
                 <SelectTrigger className={`w-full ${fieldClass}`}>
                   <SelectValue placeholder={machinesLoading ? 'Loading machines...' : 'Select machine'} />
@@ -236,6 +241,12 @@ export default function AddSessionModal({
               )}
             </div>
           </div>
+
+          {allMachinesInUse && (
+            <div className="rounded-md border border-warning/40 bg-warning-bg px-3 py-2 text-xs text-warning font-medium">
+              All machines are currently in use. Please wait for a session to complete.
+            </div>
+          )}
 
           {/* Target Duration */}
           <div className="space-y-1.5">
@@ -320,7 +331,7 @@ export default function AddSessionModal({
           {/* Submit */}
           <Button
             onClick={handleSubmit}
-            disabled={submitting}
+            disabled={submitting || allMachinesInUse || !machineId}
             className="w-full bg-accent text-white hover:brightness-110 shadow-md font-semibold text-sm mt-4 mb-2"
           >
             {submitting ? (

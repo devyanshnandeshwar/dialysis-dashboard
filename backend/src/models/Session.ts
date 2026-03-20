@@ -1,4 +1,5 @@
 import mongoose, { Schema, Document, Types } from 'mongoose';
+import { MACHINES } from '../config/machines';
 
 export interface IBloodPressure {
   systolic: number;
@@ -15,7 +16,7 @@ export interface IDialysisSession extends Document {
   patientId: Types.ObjectId;
   scheduledDate: Date;
   status: 'not_started' | 'in_progress' | 'completed';
-  machineId?: string;
+  machineId: string;
   nurseId?: string;
   preWeight?: number;
   postWeight?: number | null;
@@ -67,6 +68,11 @@ const DialysisSessionSchema = new Schema<IDialysisSession>(
     },
     machineId: {
       type: String,
+      required: true,
+      validate: {
+        validator: (val: string) => MACHINES.map((m) => m.id).includes(val),
+        message: 'Invalid machine ID',
+      },
     },
     nurseId: {
       type: String,

@@ -81,6 +81,11 @@ const SessionCard = React.memo(function SessionCard({
   const isCompleted = session.status === 'completed';
 
   const handleStartSession = async () => {
+    if (!session.machineId) {
+      toast.error('Cannot start — no machine assigned to this session');
+      return;
+    }
+
     try {
       setStarting(true);
       await startSession(session._id);

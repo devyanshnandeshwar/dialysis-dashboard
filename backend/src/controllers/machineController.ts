@@ -14,7 +14,7 @@ export const getMachines = async (
 
         const activeToday = await DialysisSession.find(
             {
-                scheduledDate: { $gte: startOfDay, $lt: endOfDay },
+                scheduledDate: { $gte: startOfDay, $lte: endOfDay },
                 status: { $in: ['not_started', 'in_progress'] },
                 machineId: { $exists: true, $ne: null },
             },

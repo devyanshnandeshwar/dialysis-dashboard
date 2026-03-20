@@ -25,6 +25,11 @@ export const createSession = async (
       targetDurationMinutes,
     } = req.body;
 
+    if (!machineId) {
+      res.status(400).json({ error: 'Machine ID is required' });
+      return;
+    }
+
     // Fetch the patient for dry weight (needed by anomaly detector)
     const patient = await Patient.findById(patientId);
     if (!patient) {
@@ -40,6 +45,20 @@ export const createSession = async (
     const todayCount = await DialysisSession.countDocuments({
       scheduledDate: { $gte: startOfDay, $lt: endOfDay }
     });
+
+    const existingSession = await DialysisSession.findOne({
+      machineId,
+      scheduledDate: { $gte: startOfDay, $lte: endOfDay },
+      status: { $in: ['not_started', 'in_progress'] },
+    });
+
+    if (existingSession) {
+      res.status(409).json({
+        error: 'Machine already assigned to another session today',
+        machineId,
+      });
+      return;
+    }
 
     const sessionData = {
       patientId,
@@ -75,18 +94,29 @@ export const updateSession = async (
   next: NextFunction
 ) => {
   try {
-    const session = await DialysisSession.findByIdAndUpdate(
-      req.params.id,
-      { status: req.body.status },
-      { new: true, runValidators: true }
-    ).populate('patientId', 'name mrn dryWeight');
+    const session = await DialysisSession.findById(req.params.id);
 
     if (!session) {
       res.status(404).json({ error: 'Session not found' });
       return;
     }
 
-    res.json(session);
+    if (req.body.status === 'in_progress' && !session.machineId) {
+      res.status(400).json({
+        error: 'Cannot start session — no machine assigned',
+      });
+      return;
+    }
+
+    session.status = req.body.status;
+    await session.save();
+
+    const populated = await DialysisSession.findById(session._id).populate(
+      'patientId',
+      'name mrn dryWeight'
+    );
+
+    res.json(populated);
   } catch (err) {
     next(err);
   }
@@ -110,6 +140,13 @@ export const completeSession = async (
 
     if (!session) {
       res.status(404).json({ error: 'Session not found' });
+      return;
+    }
+
+    if (!session.machineId) {
+      res.status(400).json({
+        error: 'Cannot complete session — no machine assigned',
+      });
       return;
     }
 
