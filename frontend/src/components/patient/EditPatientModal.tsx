@@ -62,7 +62,7 @@ export default function EditPatientModal({ patient, onPatientUpdated }: EditPati
   };
 
   const fieldClass =
-    'bg-surface-alt border-border-custom text-text-primary placeholder:text-text-muted focus-visible:ring-brand';
+    'bg-bg border-border text-text-primary text-sm placeholder:text-text-muted focus-visible:border-accent focus-visible:ring-1 focus-visible:ring-accent-glow h-9';
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -70,28 +70,28 @@ export default function EditPatientModal({ patient, onPatientUpdated }: EditPati
         <Button
           size="sm"
           variant="ghost"
-          className="h-6 w-6 p-0 text-text-muted hover:text-brand hover:bg-surface-alt opacity-0 group-hover:opacity-100 transition-opacity"
+          className="h-8 w-8 p-0 border border-transparent text-text-muted hover:text-accent hover:bg-accent-glow hover:border-accent/30 opacity-0 group-hover:opacity-100 transition-all rounded-md"
         >
-          <Pencil className="w-3.5 h-3.5" />
+          <Pencil className="w-4 h-4" />
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="bg-surface border-border-custom text-text-primary max-w-sm">
-        <DialogHeader>
-          <DialogTitle className="text-text-primary">Edit Patient</DialogTitle>
+      <DialogContent className="bg-surface border-border shadow-2xl text-text-primary max-w-sm p-0 overflow-hidden">
+        <DialogHeader className="px-6 py-4 border-b border-border-subtle bg-surface-alt/40">
+          <DialogTitle className="text-text-primary text-lg font-bold">Edit Patient</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 py-2">
+        <div className="space-y-4 px-6 py-4">
           <div className="space-y-1.5">
-            <Label className="text-text-muted text-xs">MRN (Read-only)</Label>
-            <div className="flex items-center gap-2 px-3 py-2 bg-surface-alt/50 border border-border-custom rounded-md text-text-muted text-sm">
+            <Label className="text-[10px] tracking-widest text-text-muted uppercase font-bold">MRN (Read-only)</Label>
+            <div className="flex items-center gap-2 px-3 h-9 bg-bg border border-border rounded-md text-text-muted text-sm cursor-not-allowed opacity-70">
               <Lock className="w-3.5 h-3.5" />
               {patient.mrn}
             </div>
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-text-muted text-xs">Name *</Label>
+            <Label className="text-[10px] tracking-widest text-text-muted uppercase font-bold">Name *</Label>
             <Input
               name="name"
               value={formData.name}
@@ -102,7 +102,7 @@ export default function EditPatientModal({ patient, onPatientUpdated }: EditPati
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-text-muted text-xs">Dry Weight (kg) *</Label>
+            <Label className="text-[10px] tracking-widest text-text-muted uppercase font-bold">Dry Weight (kg) *</Label>
             <Input
               name="dryWeight"
               type="number"
@@ -115,7 +115,7 @@ export default function EditPatientModal({ patient, onPatientUpdated }: EditPati
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-text-muted text-xs">Date of Birth</Label>
+            <Label className="text-[10px] tracking-widest text-text-muted uppercase font-bold">Date of Birth</Label>
             <Input
               name="dateOfBirth"
               type="date"
@@ -126,7 +126,7 @@ export default function EditPatientModal({ patient, onPatientUpdated }: EditPati
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-text-muted text-xs">Primary Diagnosis</Label>
+            <Label className="text-[10px] tracking-widest text-text-muted uppercase font-bold">Primary Diagnosis</Label>
             <Input
               name="primaryDiagnosis"
               value={formData.primaryDiagnosis}
@@ -137,7 +137,7 @@ export default function EditPatientModal({ patient, onPatientUpdated }: EditPati
           </div>
           
           <div className="space-y-1.5">
-            <Label className="text-text-muted text-xs">Assigned Unit</Label>
+            <Label className="text-[10px] tracking-widest text-text-muted uppercase font-bold">Assigned Unit</Label>
             <Input
               name="assignedUnit"
               value={formData.assignedUnit}
@@ -150,7 +150,7 @@ export default function EditPatientModal({ patient, onPatientUpdated }: EditPati
           <Button
             onClick={handleSubmit}
             disabled={submitting}
-            className="w-full bg-brand text-white hover:bg-brand/90 mt-4"
+            className="w-full bg-accent text-white hover:brightness-110 shadow-md font-semibold text-sm mt-2 mb-2"
           >
             {submitting ? (
               <>

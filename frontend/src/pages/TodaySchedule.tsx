@@ -95,27 +95,41 @@ export default function TodaySchedule() {
     day: 'numeric',
   });
 
+  const inProgressCount = sessions.filter((s) => s.status === 'in_progress').length;
   const anomalyCount = sessions.filter((s) => s.anomalies.length > 0).length;
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
+    <div className="max-w-5xl mx-auto space-y-6 pb-10">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="sticky top-0 z-10 -mx-6 px-6 -mt-6 pt-6 pb-4 mb-6 backdrop-blur-sm bg-bg/80 border-b border-border-subtle flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-text-primary flex items-center gap-2">
-            <CalendarDays className="w-6 h-6 text-brand" />
+          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+            <CalendarDays className="w-6 h-6 text-accent" />
             Today's Schedule
           </h1>
           <p className="text-sm text-text-muted mt-1">
-            {today} · {sessions.length} session{sessions.length !== 1 ? 's' : ''}
-            {anomalyCount > 0 && (
-              <span className="text-warning ml-2">
-                · {anomalyCount} with anomalies
-              </span>
-            )}
+            {today}
           </p>
         </div>
         <AddSessionModal onSessionCreated={fetchSessions} />
+      </div>
+
+      {/* Stats Row */}
+      <div className="flex flex-wrap gap-3">
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface border border-border text-xs font-medium text-text-primary shadow-sm">
+          <span className="text-text-muted">Total Today:</span> {sessions.length}
+        </div>
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface border border-border text-xs font-medium text-text-primary shadow-sm">
+          <span className="text-text-muted">In Progress:</span> {inProgressCount}
+        </div>
+        <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full shadow-sm text-xs font-medium ${
+          anomalyCount > 0 
+            ? 'bg-critical-bg border border-critical text-critical' 
+            : 'bg-surface border border-border text-text-primary'
+        }`}>
+          {anomalyCount > 0 && <AlertTriangle className="w-3.5 h-3.5" />}
+          <span className={anomalyCount > 0 ? '' : 'text-text-muted'}>Anomalies:</span> {anomalyCount}
+        </div>
       </div>
 
       {/* Filter toggles */}
@@ -127,16 +141,16 @@ export default function TodaySchedule() {
         ] as const).map(({ key, label }) => (
           <Button
             key={key}
-            variant={filter === key ? 'default' : 'outline'}
+            variant="ghost"
             size="sm"
             onClick={() => setFilter(key)}
-            className={
+            className={`rounded-full px-4 border transition-all ${
               filter === key
-                ? 'bg-brand text-white hover:bg-brand/90'
-                : 'border-border-custom text-text-muted hover:text-text-primary hover:bg-surface-alt'
-            }
+                ? 'bg-accent-glow border-accent text-accent hover:bg-accent-glow hover:text-accent'
+                : 'bg-transparent border-border text-text-muted hover:bg-surface-hover hover:text-text-primary'
+            }`}
           >
-            {key === 'anomalies' && <AlertTriangle className="w-3.5 h-3.5 mr-1" />}
+            {key === 'anomalies' && <AlertTriangle className="w-3.5 h-3.5 mr-1.5" />}
             {label}
           </Button>
         ))}

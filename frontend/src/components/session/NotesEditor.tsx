@@ -41,12 +41,12 @@ export default function NotesEditor({
 
   if (editing) {
     return (
-      <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
+      <div className="space-y-3" onClick={(e) => e.stopPropagation()}>
         <Textarea
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           rows={3}
-          className="bg-surface-alt border-border-custom text-text-primary text-xs placeholder:text-text-muted focus-visible:ring-brand"
+          className="bg-bg border-border text-text-primary text-sm placeholder:text-text-muted focus-visible:border-accent focus-visible:ring-1 focus-visible:ring-accent-glow rounded-md resize-none"
           placeholder="Enter nurse notes..."
           autoFocus
         />
@@ -55,23 +55,23 @@ export default function NotesEditor({
             size="sm"
             onClick={handleSave}
             disabled={saving}
-            className="bg-brand text-white hover:bg-brand/90 h-7 text-xs gap-1"
+            className="bg-accent text-white hover:brightness-110 h-8 text-xs gap-1.5 rounded-md shadow-sm"
           >
             {saving ? (
-              <Loader2 className="w-3 h-3 animate-spin" />
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
             ) : (
-              <Save className="w-3 h-3" />
+              <Save className="w-3.5 h-3.5" />
             )}
-            Save
+            Save Note
           </Button>
           <Button
             size="sm"
-            variant="outline"
+            variant="ghost"
             onClick={handleCancel}
             disabled={saving}
-            className="border-border-custom text-text-muted hover:text-text-primary hover:bg-surface-alt h-7 text-xs gap-1"
+            className="text-text-muted hover:text-text-primary hover:bg-surface h-8 text-xs gap-1.5 rounded-md border border-border"
           >
-            <X className="w-3 h-3" />
+            <X className="w-3.5 h-3.5" />
             Cancel
           </Button>
         </div>
@@ -80,20 +80,19 @@ export default function NotesEditor({
   }
 
   return (
-    <div className="flex items-start gap-2 group" onClick={(e) => e.stopPropagation()}>
-      <StickyNote className="w-3.5 h-3.5 text-text-muted mt-0.5 shrink-0" />
-      <p className="text-xs text-text-muted flex-1">
+    <div className="flex items-start gap-3 group cursor-pointer" onClick={() => setEditing(true)}>
+      <StickyNote className="w-4 h-4 text-text-muted mt-0.5 shrink-0" />
+      <p className="text-sm text-text-muted flex-1 leading-relaxed">
         {initialNotes || (
-          <span className="italic">No notes yet</span>
+          <span className="italic opacity-60">No notes recorded yet.</span>
         )}
       </p>
       <Button
         size="sm"
         variant="ghost"
-        onClick={() => setEditing(true)}
-        className="opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6 p-0 text-text-muted hover:text-brand hover:bg-surface-alt"
+        className="opacity-0 group-hover:opacity-100 transition-opacity h-7 w-7 p-0 text-text-muted hover:text-accent hover:bg-accent-glow shrink-0 rounded-md"
       >
-        <Pencil className="w-3 h-3" />
+        <Pencil className="w-3.5 h-3.5" />
       </Button>
     </div>
   );

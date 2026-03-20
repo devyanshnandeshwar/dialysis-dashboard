@@ -128,31 +128,31 @@ export default function AddSessionModal({ onSessionCreated }: Props) {
   };
 
   const fieldClass =
-    'bg-surface-alt border-border-custom text-text-primary placeholder:text-text-muted focus-visible:ring-brand';
+    'bg-bg border-border text-text-primary text-sm placeholder:text-text-muted focus-visible:border-accent focus-visible:ring-1 focus-visible:ring-accent-glow h-9';
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button
           size="sm"
-          className="bg-brand text-white hover:bg-brand/90 gap-1.5"
+          className="bg-accent text-white hover:brightness-110 shadow-sm font-medium gap-1.5"
         >
           <Plus className="w-4 h-4" />
           Add Session
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="bg-surface border-border-custom text-text-primary max-w-lg max-h-[85vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="text-text-primary">
+      <DialogContent className="bg-surface border-border shadow-2xl text-text-primary max-w-lg max-h-[85vh] overflow-y-auto p-0">
+        <DialogHeader className="px-6 py-4 border-b border-border-subtle bg-surface-alt/40">
+          <DialogTitle className="text-text-primary text-lg font-bold">
             Record New Session
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 mt-2">
+        <div className="space-y-4 px-6 py-4">
           {/* Patient */}
           <div className="space-y-1.5">
-            <Label className="text-text-muted text-xs">Patient *</Label>
+            <Label className="text-[10px] tracking-widest text-text-muted uppercase font-bold">Patient *</Label>
             <Select value={patientId} onValueChange={setPatientId}>
               <SelectTrigger className={`w-full ${fieldClass}`}>
                 <SelectValue placeholder="Select patient" />
@@ -173,7 +173,7 @@ export default function AddSessionModal({ onSessionCreated }: Props) {
           {/* Machine ID + Date */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label className="text-text-muted text-xs">Machine ID</Label>
+              <Label className="text-[10px] tracking-widest text-text-muted uppercase font-bold">Machine ID</Label>
               <Input
                 value={machineId}
                 onChange={(e) => setMachineId(e.target.value)}
@@ -182,7 +182,7 @@ export default function AddSessionModal({ onSessionCreated }: Props) {
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-text-muted text-xs">
+              <Label className="text-[10px] tracking-widest text-text-muted uppercase font-bold">
                 Scheduled Date *
               </Label>
               <Input
@@ -200,7 +200,7 @@ export default function AddSessionModal({ onSessionCreated }: Props) {
           {/* Weights */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label className="text-text-muted text-xs">Pre-weight (kg)</Label>
+              <Label className="text-[10px] tracking-widest text-text-muted uppercase font-bold">Pre-weight (kg)</Label>
               <Input
                 type="number"
                 step="0.1"
@@ -211,7 +211,7 @@ export default function AddSessionModal({ onSessionCreated }: Props) {
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-text-muted text-xs">
+              <Label className="text-[10px] tracking-widest text-text-muted uppercase font-bold">
                 Post-weight (kg)
               </Label>
               <Input
@@ -227,7 +227,7 @@ export default function AddSessionModal({ onSessionCreated }: Props) {
 
           {/* Pre-BP */}
           <div className="space-y-1.5">
-            <Label className="text-text-muted text-xs">
+            <Label className="text-[10px] tracking-widest text-text-muted uppercase font-bold">
               Pre-Blood Pressure (mmHg)
             </Label>
             <div className="grid grid-cols-2 gap-3">
@@ -250,7 +250,7 @@ export default function AddSessionModal({ onSessionCreated }: Props) {
 
           {/* Post-BP */}
           <div className="space-y-1.5">
-            <Label className="text-text-muted text-xs">
+            <Label className="text-[10px] tracking-widest text-text-muted uppercase font-bold">
               Post-Blood Pressure (mmHg)
             </Label>
             <div className="grid grid-cols-2 gap-3">
@@ -274,7 +274,7 @@ export default function AddSessionModal({ onSessionCreated }: Props) {
           {/* Duration */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label className="text-text-muted text-xs">
+              <Label className="text-[10px] tracking-widest text-text-muted uppercase font-bold">
                 Session Duration (min)
               </Label>
               <Input
@@ -286,7 +286,7 @@ export default function AddSessionModal({ onSessionCreated }: Props) {
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-text-muted text-xs">
+              <Label className="text-[10px] tracking-widest text-text-muted uppercase font-bold">
                 Target Duration (min)
               </Label>
               <Input
@@ -300,7 +300,7 @@ export default function AddSessionModal({ onSessionCreated }: Props) {
 
           {/* Status */}
           <div className="space-y-1.5">
-            <Label className="text-text-muted text-xs">Status</Label>
+            <Label className="text-[10px] tracking-widest text-text-muted uppercase font-bold">Status</Label>
             <Select value={status} onValueChange={setStatus}>
               <SelectTrigger className={`w-full ${fieldClass}`}>
                 <SelectValue />
@@ -321,7 +321,7 @@ export default function AddSessionModal({ onSessionCreated }: Props) {
 
           {/* Notes */}
           <div className="space-y-1.5">
-            <Label className="text-text-muted text-xs">Nurse Notes</Label>
+            <Label className="text-[10px] tracking-widest text-text-muted uppercase font-bold">Nurse Notes</Label>
             <Textarea
               value={nurseNotes}
               onChange={(e) => setNurseNotes(e.target.value)}
@@ -335,7 +335,7 @@ export default function AddSessionModal({ onSessionCreated }: Props) {
           <Button
             onClick={handleSubmit}
             disabled={submitting}
-            className="w-full bg-brand text-white hover:bg-brand/90"
+            className="w-full bg-accent text-white hover:brightness-110 shadow-md font-semibold text-sm mt-4 mb-2"
           >
             {submitting ? (
               <>

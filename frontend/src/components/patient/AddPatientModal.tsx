@@ -71,25 +71,25 @@ export default function AddPatientModal({ onPatientCreated }: AddPatientModalPro
   };
 
   const fieldClass =
-    'bg-surface-alt border-border-custom text-text-primary placeholder:text-text-muted focus-visible:ring-brand';
+    'bg-bg border-border text-text-primary text-sm placeholder:text-text-muted focus-visible:border-accent focus-visible:ring-1 focus-visible:ring-accent-glow h-9';
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="bg-brand text-white hover:bg-brand/90 font-medium">
+        <Button className="bg-accent text-white hover:brightness-110 shadow-sm font-medium">
           <Plus className="w-4 h-4 mr-2" />
           Add Patient
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="bg-surface border-border-custom text-text-primary max-w-sm">
-        <DialogHeader>
-          <DialogTitle className="text-text-primary">Register New Patient</DialogTitle>
+      <DialogContent className="bg-surface border-border shadow-2xl text-text-primary max-w-sm p-0 overflow-hidden">
+        <DialogHeader className="px-6 py-4 border-b border-border-subtle bg-surface-alt/40">
+          <DialogTitle className="text-text-primary text-lg font-bold">Register New Patient</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 py-2">
+        <div className="space-y-4 px-6 py-4">
           <div className="space-y-1.5">
-            <Label className="text-text-muted text-xs">Full Name *</Label>
+            <Label className="text-[10px] tracking-widest text-text-muted uppercase font-bold">Full Name *</Label>
             <Input
               name="name"
               value={formData.name}
@@ -100,7 +100,7 @@ export default function AddPatientModal({ onPatientCreated }: AddPatientModalPro
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-text-muted text-xs">Medical Record Number (MRN) *</Label>
+            <Label className="text-[10px] tracking-widest text-text-muted uppercase font-bold">Medical Record Number (MRN) *</Label>
             <Input
               name="mrn"
               value={formData.mrn}
@@ -111,7 +111,7 @@ export default function AddPatientModal({ onPatientCreated }: AddPatientModalPro
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-text-muted text-xs">Dry Weight (kg) *</Label>
+            <Label className="text-[10px] tracking-widest text-text-muted uppercase font-bold">Dry Weight (kg) *</Label>
             <Input
               name="dryWeight"
               type="number"
@@ -124,7 +124,7 @@ export default function AddPatientModal({ onPatientCreated }: AddPatientModalPro
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-text-muted text-xs">Date of Birth</Label>
+            <Label className="text-[10px] tracking-widest text-text-muted uppercase font-bold">Date of Birth</Label>
             <Input
               name="dateOfBirth"
               type="date"
@@ -135,7 +135,7 @@ export default function AddPatientModal({ onPatientCreated }: AddPatientModalPro
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-text-muted text-xs">Primary Diagnosis</Label>
+            <Label className="text-[10px] tracking-widest text-text-muted uppercase font-bold">Primary Diagnosis</Label>
             <Input
               name="primaryDiagnosis"
               value={formData.primaryDiagnosis}
@@ -146,7 +146,7 @@ export default function AddPatientModal({ onPatientCreated }: AddPatientModalPro
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-text-muted text-xs">Assigned Unit</Label>
+            <Label className="text-[10px] tracking-widest text-text-muted uppercase font-bold">Assigned Unit</Label>
             <Input
               name="assignedUnit"
               value={formData.assignedUnit}
@@ -159,7 +159,7 @@ export default function AddPatientModal({ onPatientCreated }: AddPatientModalPro
           <Button
             onClick={handleSubmit}
             disabled={submitting}
-            className="w-full bg-brand text-white hover:bg-brand/90 mt-4"
+            className="w-full bg-accent text-white hover:brightness-110 shadow-md font-semibold text-sm mt-2 mb-2"
           >
             {submitting ? (
               <>
