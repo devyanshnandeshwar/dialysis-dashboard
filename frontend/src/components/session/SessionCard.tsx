@@ -108,10 +108,10 @@ const SessionCard = React.memo(function SessionCard({
           </div>
         )}
 
-        <div className="flex w-full items-stretch min-h-24">
+        <div className="flex w-full items-stretch min-h-24 overflow-hidden">
 
           {/* Queue Left Fixed Section */}
-          <div className="w-16 flex flex-col items-center justify-center border-r border-border bg-surface-alt/10 py-2 shrink-0">
+          <div className="w-12 sm:w-16 flex flex-col items-center justify-center border-r border-border bg-surface-alt/10 py-2 shrink-0">
             <Button
               variant="ghost"
               size="icon"
@@ -138,15 +138,15 @@ const SessionCard = React.memo(function SessionCard({
           </div>
 
           {/* Main Content Area */}
-          <div className="flex-1 flex flex-col justify-center p-4 min-w-0 pb-3">
+          <div className="flex-1 flex flex-col justify-center p-3 sm:p-4 min-w-0 pb-3">
             {/* Row 1: Name + Status */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0 pr-1">
               <h3 className="text-base font-semibold text-text-primary truncate">
                 {patient.name}
               </h3>
               <StatusBadge status={session.status} />
               {session.machineId && (
-                <span className="text-[11px] font-mono text-text-secondary font-medium bg-surface-alt px-1.5 py-0.5 rounded ml-auto border border-border-subtle tracking-wide">
+                <span className="text-[11px] font-mono text-text-secondary font-medium bg-surface-alt px-1.5 py-0.5 rounded ml-auto shrink-0 border border-border-subtle tracking-wide">
                   {session.machineId}
                 </span>
               )}
@@ -222,22 +222,25 @@ const SessionCard = React.memo(function SessionCard({
           </div>
 
           {/* Right Action Panel */}
-          <div className="shrink-0 flex flex-col justify-between items-center px-4 py-3 border-l border-border-subtle bg-surface-alt/40 rounded-r-xl">
-            <div className="min-h-8 flex items-center">
+          <div className="shrink-0 w-28 sm:w-auto flex flex-col justify-between items-center px-2 sm:px-4 py-3 border-l border-border-subtle bg-surface-alt/40 rounded-r-xl">
+            <div className="min-h-8 w-full flex items-center justify-center">
               {isNotStarted && (
                 <Button
                   size="sm"
                   onClick={handleStartSession}
                   disabled={starting}
-                  className="bg-surface border border-border text-text-primary hover:bg-surface-hover"
+                  className="bg-surface border border-border text-text-primary hover:bg-surface-hover px-2 sm:px-3"
                 >
                   {starting ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
-                      Starting
+                      <span className="hidden sm:inline">Starting</span>
                     </>
                   ) : (
-                    'Start Session'
+                    <>
+                      <span className="hidden sm:inline">Start Session</span>
+                      <span className="sm:hidden">Start</span>
+                    </>
                   )}
                 </Button>
               )}
@@ -247,8 +250,9 @@ const SessionCard = React.memo(function SessionCard({
               )}
 
               {isCompleted && (
-                <span className="text-[11px] uppercase tracking-wide text-text-secondary font-semibold">
-                  Completed {formatTime(session.updatedAt)}
+                <span className="text-[10px] sm:text-[11px] uppercase tracking-wide text-text-secondary font-semibold text-center">
+                  <span className="hidden sm:inline">Completed {formatTime(session.updatedAt)}</span>
+                  <span className="sm:hidden">Done {formatTime(session.updatedAt)}</span>
                 </span>
               )}
             </div>

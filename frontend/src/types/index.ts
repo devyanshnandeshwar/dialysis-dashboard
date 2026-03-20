@@ -9,6 +9,13 @@ export interface Anomaly {
   message: string;
 }
 
+export interface HDMachine {
+  id: string;
+  name: string;
+  type: 'Hemodialysis';
+  status: 'available' | 'in_use';
+}
+
 export interface Patient {
   _id: string;
   name: string;

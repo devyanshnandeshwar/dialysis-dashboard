@@ -16,11 +16,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import axios from 'axios';
 import { Plus, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { getPatients } from '@/api/patients';
+import { getMachines } from '@/api/machines';
 import { createSession } from '@/api/sessions';
-import type { Patient } from '@/types';
+import type { Patient, HDMachine } from '@/types';
 
 interface Props {
   onSessionCreated: () => void;
@@ -29,6 +31,8 @@ interface Props {
 export default function AddSessionModal({ onSessionCreated }: Props) {
   const [open, setOpen] = useState(false);
   const [patients, setPatients] = useState<Patient[]>([]);
+  const [machines, setMachines] = useState<HDMachine[]>([]);
+  const [machinesLoading, setMachinesLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -49,6 +53,16 @@ export default function AddSessionModal({ onSessionCreated }: Props) {
       getPatients()
         .then(setPatients)
         .catch(() => toast.error('Failed to load patients'));
+
+      setMachinesLoading(true);
+      getMachines()
+        .then((data) => {
+          setMachines(data);
+          const firstAvailable = data.find((machine) => machine.status === 'available');
+          setMachineId((prev) => prev || firstAvailable?.id || '');
+        })
+        .catch(() => toast.error('Failed to load machines'))
+        .finally(() => setMachinesLoading(false));
     }
   }, [open]);
 
@@ -108,8 +122,13 @@ export default function AddSessionModal({ onSessionCreated }: Props) {
       resetForm();
       setOpen(false);
       onSessionCreated();
-    } catch {
-      toast.error('Failed to create session');
+    } catch (error) {
+      if (axios.isAxiosError<{ details?: Array<{ msg?: string }> }>(error)) {
+        const firstError = error.response?.data?.details?.[0]?.msg;
+        toast.error(firstError || 'Failed to create session');
+      } else {
+        toast.error('Failed to create session');
+      }
     } finally {
       setSubmitting(false);
     }
@@ -162,12 +181,28 @@ export default function AddSessionModal({ onSessionCreated }: Props) {
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label className="text-[10px] tracking-widest text-text-muted uppercase font-bold">Machine ID *</Label>
-              <Input
-                value={machineId}
-                onChange={(e) => setMachineId(e.target.value)}
-                placeholder="M-101"
-                className={fieldClass}
-              />
+              <Select value={machineId} onValueChange={setMachineId} disabled={machinesLoading}>
+                <SelectTrigger className={`w-full ${fieldClass}`}>
+                  <SelectValue placeholder={machinesLoading ? 'Loading machines...' : 'Select machine'} />
+                </SelectTrigger>
+                <SelectContent className="bg-surface border-border-custom">
+                  {machines.map((machine) => {
+                    const disabled = machine.status === 'in_use';
+                    return (
+                      <SelectItem
+                        key={machine.id}
+                        value={machine.id}
+                        disabled={disabled}
+                        className="text-text-primary focus:bg-surface-alt"
+                      >
+                        <span className={disabled ? 'text-critical' : 'text-success'}>
+                          {machine.id} - {disabled ? 'In Use' : 'Available'}
+                        </span>
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
               {errors.machineId && (
                 <p className="text-xs text-critical">{errors.machineId}</p>
               )}

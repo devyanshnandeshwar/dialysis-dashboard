@@ -93,8 +93,9 @@ export default function CompleteSessionModal({
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button size="sm" className="bg-accent text-white hover:brightness-110">
-                    Complete Session
+                <Button size="sm" className="bg-accent text-white hover:brightness-110 px-2 sm:px-3">
+                    <span className="hidden sm:inline">Complete Session</span>
+                    <span className="sm:hidden">Complete</span>
                 </Button>
             </DialogTrigger>
 

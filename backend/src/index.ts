@@ -6,6 +6,7 @@ import dotenv from 'dotenv';
 import connectDB from './config/db';
 import patientRoutes from './routes/patientRoutes';
 import sessionRoutes from './routes/sessionRoutes';
+import machineRoutes from './routes/machineRoutes';
 import errorHandler from './middleware/errorHandler';
 
 dotenv.config();
@@ -25,6 +26,7 @@ app.get('/api/health', (_req, res) => {
 // Routes
 app.use('/api/patients', patientRoutes);
 app.use('/api/sessions', sessionRoutes);
+app.use('/api/machines', machineRoutes);
 
 // Global error handler (must be after routes)
 app.use(errorHandler);
