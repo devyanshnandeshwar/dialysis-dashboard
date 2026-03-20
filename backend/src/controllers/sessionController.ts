@@ -202,11 +202,14 @@ export const reorderQueue = async (
     }
 
     // Swap queuePositions
-    const currentPos = todaySessions[currentIndex].queuePosition;
-    const swapPos = todaySessions[swapIndex].queuePosition;
+    const currentSession = todaySessions[currentIndex]!;
+    const swapSession = todaySessions[swapIndex]!;
 
-    await DialysisSession.findByIdAndUpdate(todaySessions[currentIndex]._id, { queuePosition: swapPos });
-    await DialysisSession.findByIdAndUpdate(todaySessions[swapIndex]._id, { queuePosition: currentPos });
+    const currentPos = currentSession.queuePosition;
+    const swapPos = swapSession.queuePosition;
+
+    await DialysisSession.findByIdAndUpdate(currentSession._id, { queuePosition: swapPos });
+    await DialysisSession.findByIdAndUpdate(swapSession._id, { queuePosition: currentPos });
 
     // Return updated today's schedule
     const updated = await DialysisSession.find({
