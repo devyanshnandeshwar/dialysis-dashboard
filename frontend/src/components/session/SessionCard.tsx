@@ -44,13 +44,13 @@ export default function SessionCard({
 
   // Track previous position for flip animation
   const cardRef = useRef<HTMLDivElement>(null);
-  const [prevTop, setPrevTop] = useState<number | null>(null);
+  const prevTopRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (cardRef.current) {
       const top = cardRef.current.getBoundingClientRect().top;
-      if (prevTop !== null && prevTop !== top) {
-        const deltaY = prevTop - top;
+      if (prevTopRef.current !== null && prevTopRef.current !== top) {
+        const deltaY = prevTopRef.current - top;
         const el = cardRef.current;
         el.style.transform = `translateY(${deltaY}px)`;
         el.style.transition = 'transform 0s';
@@ -60,7 +60,7 @@ export default function SessionCard({
           el.style.transition = 'transform 300ms cubic-bezier(0.4, 0, 0.2, 1)';
         });
       }
-      setPrevTop(top);
+      prevTopRef.current = top;
     }
   }, [sequenceNumber]); // Re-run when position changes
 
