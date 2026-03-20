@@ -29,6 +29,8 @@ export default function PatientsPage() {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [diagnosisFilter, setDiagnosisFilter] = useState('all');
+  const [highRiskOnly, setHighRiskOnly] = useState(false);
 
   const fetchPatients = async () => {
     try {
@@ -49,24 +51,40 @@ export default function PatientsPage() {
   const handlePatientUpdated = (updated: Patient) => {
     setPatients(prev => prev.map(p => p._id === updated._id ? { ...p, ...updated } : p));
   };
-  
+
   const handlePatientCreated = (created: Patient) => {
     // New patient won't have aggregated fields yet, provide defaults locally
     const newPatient = { ...created, totalSessions: 0, lastAnomalies: [], lastSession: null };
     setPatients(prev => [newPatient, ...prev]);
   };
 
-  const filteredPatients = patients.filter(p => 
-    p.name.toLowerCase().includes(search.toLowerCase()) || 
-    p.mrn.toLowerCase().includes(search.toLowerCase())
-  );
+  const diagnosisOptions = Array.from(
+    new Set(
+      patients
+        .map((p) => p.primaryDiagnosis?.trim())
+        .filter((value): value is string => Boolean(value))
+    )
+  ).sort((a, b) => a.localeCompare(b));
+
+  const filteredPatients = patients.filter((p) => {
+    const matchesSearch =
+      p.name.toLowerCase().includes(search.toLowerCase()) ||
+      p.mrn.toLowerCase().includes(search.toLowerCase());
+
+    const normalizedDiagnosis = p.primaryDiagnosis?.trim() || '';
+    const matchesDiagnosis = diagnosisFilter === 'all' || normalizedDiagnosis === diagnosisFilter;
+    const isHighRisk = (p.lastAnomalies?.length || 0) > 0;
+    const matchesRisk = !highRiskOnly || isHighRisk;
+
+    return matchesSearch && matchesDiagnosis && matchesRisk;
+  });
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 pb-10">
       {/* Header */}
       <div className="sticky top-0 z-10 -mx-6 px-6 -mt-6 pt-6 pb-4 mb-6 backdrop-blur-sm bg-bg/80 border-b border-border-subtle flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-text-primary flex items-center gap-2">
             <Users className="w-6 h-6 text-accent" />
             Patients Directory
           </h1>
@@ -77,15 +95,39 @@ export default function PatientsPage() {
         <AddPatientModal onPatientCreated={handlePatientCreated} />
       </div>
 
-      {/* Filter */}
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-        <Input 
-          placeholder="Search by name or MRN..." 
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="pl-9 bg-surface border-border text-text-primary focus-visible:border-accent focus-visible:ring-accent-glow"
-        />
+      {/* Filters */}
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+        <div className="relative max-w-md w-full">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
+          <Input
+            placeholder="Search by name or MRN..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9 bg-surface border-border text-text-primary focus-visible:border-accent focus-visible:ring-accent-glow"
+          />
+        </div>
+        <select
+          value={diagnosisFilter}
+          onChange={(e) => setDiagnosisFilter(e.target.value)}
+          className="h-10 rounded-md border border-border bg-surface px-3 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-glow"
+        >
+          <option value="all">All Diagnoses</option>
+          {diagnosisOptions.map((diagnosis) => (
+            <option key={diagnosis} value={diagnosis}>
+              {diagnosis}
+            </option>
+          ))}
+        </select>
+        <button
+          type="button"
+          onClick={() => setHighRiskOnly((prev) => !prev)}
+          className={`h-10 rounded-md border px-3 text-sm font-medium transition-colors ${highRiskOnly
+            ? 'border-warning text-warning bg-warning-bg'
+            : 'border-border text-text-muted bg-surface hover:text-text-primary hover:bg-surface-hover'
+            }`}
+        >
+          High-Risk Only
+        </button>
       </div>
 
       {/* List */}
@@ -103,14 +145,14 @@ export default function PatientsPage() {
           {filteredPatients.map((patient) => {
             const initial = patient.name.charAt(0).toUpperCase();
             const gradient = getGradientForName(patient.name);
-            
+
             return (
               <Card key={patient._id} className="group bg-surface border border-border transition-all hover:bg-surface-hover shadow-sm rounded-xl">
                 <CardContent className="p-4 flex flex-col md:flex-row md:items-center gap-5">
-                  
+
                   {/* Main Info w/ Avatar */}
-                  <div className="min-w-[240px] flex-1 flex items-center gap-4">
-                    <div className={`w-12 h-12 rounded-full shrink-0 flex items-center justify-center text-white font-bold text-lg shadow-inner bg-gradient-to-br ${gradient}`}>
+                  <div className="min-w-60 flex-1 flex items-center gap-4">
+                    <div className={`w-12 h-12 rounded-full shrink-0 flex items-center justify-center text-white font-bold text-lg shadow-inner bg-linear-to-br ${gradient}`}>
                       {initial}
                     </div>
                     <div>
@@ -121,24 +163,24 @@ export default function PatientsPage() {
 
                   {/* Patient Stats Columns */}
                   <div className="flex gap-8 lg:gap-12 text-sm flex-wrap items-center flex-1 border-l border-border-subtle pl-6 py-1">
-                     <div className="flex flex-col gap-1">
-                       <span className="text-[10px] tracking-widest text-text-muted uppercase font-bold">DRY WEIGHT</span>
-                       <span className="font-medium text-text-primary">{patient.dryWeight} kg</span>
-                     </div>
-                     <div className="flex flex-col gap-1 w-36 truncate">
-                       <span className="text-[10px] tracking-widest text-text-muted uppercase font-bold">DIAGNOSIS</span>
-                       <span className="font-medium text-text-primary truncate" title={patient.primaryDiagnosis || 'None'}>
-                          {patient.primaryDiagnosis || 'Unspecified'}
-                       </span>
-                     </div>
-                     <div className="flex flex-col gap-1">
-                       <span className="text-[10px] tracking-widest text-text-muted uppercase font-bold">SESSIONS</span>
-                       <span className="font-medium text-text-primary">{patient.totalSessions || 0}</span>
-                     </div>
+                    <div className="flex flex-col gap-1">
+                      <span className="text-[10px] tracking-widest text-text-muted uppercase font-bold">DRY WEIGHT</span>
+                      <span className="font-medium text-text-primary">{patient.dryWeight} kg</span>
+                    </div>
+                    <div className="flex flex-col gap-1 w-36 truncate">
+                      <span className="text-[10px] tracking-widest text-text-muted uppercase font-bold">DIAGNOSIS</span>
+                      <span className="font-medium text-text-primary truncate" title={patient.primaryDiagnosis || 'None'}>
+                        {patient.primaryDiagnosis || 'Unspecified'}
+                      </span>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <span className="text-[10px] tracking-widest text-text-muted uppercase font-bold">SESSIONS</span>
+                      <span className="font-medium text-text-primary">{patient.totalSessions || 0}</span>
+                    </div>
                   </div>
 
                   {/* Last Session Box */}
-                  <div className="min-w-[200px] bg-surface-alt/40 p-3 rounded-lg border border-border-subtle flex flex-col gap-2 shrink-0 shadow-inner">
+                  <div className="min-w-50 bg-surface-alt/40 p-3 rounded-lg border border-border-subtle flex flex-col gap-2 shrink-0 shadow-inner">
                     <div className="text-[10px] tracking-widest text-text-muted uppercase font-bold">LATEST SESSION</div>
                     {patient.lastSession ? (
                       <div className="flex items-center gap-2.5">
@@ -153,9 +195,9 @@ export default function PatientsPage() {
                     {patient.lastAnomalies && patient.lastAnomalies.length > 0 && (
                       <div className="flex items-center gap-2 mt-1">
                         {patient.lastAnomalies.slice(0, 2).map((anom, i) => (
-                          <div key={i} className={`flex items-center gap-1.5 text-[10px] tracking-wide font-bold px-2 py-0.5 rounded-full border whitespace-nowrap ${anom.severity === 'critical' ? 'bg-critical-bg text-critical border-[rgba(240,79,79,0.3)]' : 'bg-warning-bg text-warning border-[rgba(240,165,0,0.3)]'}`} title={anom.message}>
+                          <div key={i} className={`flex items-center gap-1.5 text-[10px] tracking-wide font-bold px-2 py-0.5 rounded-full border whitespace-nowrap ${anom.severity === 'critical' ? 'bg-critical-bg text-critical border-critical/30' : 'bg-warning-bg text-warning border-warning/30'}`} title={anom.message}>
                             <AlertTriangle className="w-3 h-3 shrink-0" />
-                            <span className="truncate max-w-[80px]">{anom.type.replace(/_/g, ' ')}</span>
+                            <span className="truncate max-w-20">{anom.type.replace(/_/g, ' ')}</span>
                           </div>
                         ))}
                         {patient.lastAnomalies.length > 2 && (
@@ -167,12 +209,12 @@ export default function PatientsPage() {
 
                   {/* Action Buttons */}
                   <div className="flex md:flex-col gap-2 shrink-0 pt-3 md:pt-0 pl-1 mt-2 md:mt-0 justify-center items-center">
-                     <div className="md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                       <PatientHistoryModal patient={patient} />
-                     </div>
-                     <div className="md:opacity-0 md:group-hover:opacity-100 transition-opacity mt-1">
-                        <EditPatientModal patient={patient} onPatientUpdated={handlePatientUpdated} />
-                     </div>
+                    <div className="opacity-80 hover:opacity-100 transition-opacity">
+                      <PatientHistoryModal patient={patient} />
+                    </div>
+                    <div className="opacity-80 hover:opacity-100 transition-opacity mt-1">
+                      <EditPatientModal patient={patient} onPatientUpdated={handlePatientUpdated} />
+                    </div>
                   </div>
                 </CardContent>
               </Card>

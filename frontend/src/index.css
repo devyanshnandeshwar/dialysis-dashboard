@@ -9,14 +9,14 @@
   --color-bg: #080c14;
   --color-surface: #0e1420;
   --color-surface-alt: #141928;
-  --color-surface-hover: #1a2035;
-  --color-border: #1e2640;
-  --color-border-subtle: #161d2e;
+  --color-surface-hover: #202943;
+  --color-border: #2b3757;
+  --color-border-subtle: #222d47;
   --color-text-primary: #e8edf5;
-  --color-text-secondary: #8892a4;
-  --color-text-muted: #4a5568;
-  --color-accent: #4f8ef7;
-  --color-accent-glow: rgba(79, 142, 247, 0.15);
+  --color-text-secondary: #aab6ca;
+  --color-text-muted: #7f8da7;
+  --color-accent: #6aa4ff;
+  --color-accent-glow: rgba(106, 164, 255, 0.2);
   --color-warning: #f0a500;
   --color-warning-bg: rgba(240, 165, 0, 0.1);
   --color-critical: #f04f4f;
@@ -34,7 +34,7 @@
   --color-border-subtle: #edf0f7;
   --color-text-primary: #0f1523;
   --color-text-secondary: #4a5568;
-  --color-text-muted: #9aa3b2;
+  --color-text-muted: #6b7280;
   --color-accent: #3b7ef4;
   --color-accent-glow: rgba(59, 126, 244, 0.12);
   --color-warning: #d97706;
@@ -60,6 +60,19 @@ body {
   100% {
     background-position: -200% 0;
   }
+}
+
+@keyframes queueSwapFlash {
+  0% {
+    box-shadow: 0 0 0 0 rgba(240, 165, 0, 0.45);
+  }
+  100% {
+    box-shadow: 0 0 0 14px rgba(240, 165, 0, 0);
+  }
+}
+
+.queue-swap-flash {
+  animation: queueSwapFlash 500ms ease-out;
 }
 
 html {

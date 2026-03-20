@@ -32,25 +32,15 @@ export default function TodaySchedule() {
     fetchSessions();
   }, [fetchSessions]);
 
-  const handleMoveUp = useCallback(async (id: string, index: number) => {
-    if (index === 0) return;
-    await handleReorder(id, 'up', index, index - 1);
-  }, []);
-
-  const handleMoveDown = useCallback(async (id: string, index: number) => {
-    if (index === sessions.length - 1) return;
-    await handleReorder(id, 'down', index, index + 1);
-  }, [sessions.length]);
-
-  const handleReorder = async (
-    id: string, 
-    direction: 'up' | 'down', 
-    currentIndex: number, 
+  const handleReorder = useCallback(async (
+    id: string,
+    direction: 'up' | 'down',
+    currentIndex: number,
     targetIndex: number
   ) => {
     try {
       setMovingSessionId(id);
-      
+
       // Optimistic visual swap via array index
       setSessions(prev => {
         const cloned = [...prev];
@@ -62,7 +52,7 @@ export default function TodaySchedule() {
 
       // Background API call
       const updatedSchedule = await updateQueuePosition(id, direction);
-      
+
       // Re-sync with server source of truth to ensure queuePosition fields match
       setSessions(updatedSchedule);
     } catch {
@@ -71,7 +61,17 @@ export default function TodaySchedule() {
     } finally {
       setMovingSessionId(null);
     }
-  };
+  }, [fetchSessions]);
+
+  const handleMoveUp = useCallback(async (id: string, index: number) => {
+    if (index === 0) return;
+    await handleReorder(id, 'up', index, index - 1);
+  }, [handleReorder]);
+
+  const handleMoveDown = useCallback(async (id: string, index: number) => {
+    if (index === sessions.length - 1) return;
+    await handleReorder(id, 'down', index, index + 1);
+  }, [handleReorder, sessions.length]);
 
   const handlePatientUpdated = useCallback((patientId: string, updatedPatient: Patient) => {
     setSessions(prev => prev.map(session => {
@@ -100,67 +100,67 @@ export default function TodaySchedule() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 pb-10">
-      {/* Header */}
-      <div className="sticky top-0 z-10 -mx-6 px-6 -mt-6 pt-6 pb-4 mb-6 backdrop-blur-sm bg-bg/80 border-b border-border-subtle flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-            <CalendarDays className="w-6 h-6 text-accent" />
-            Today's Schedule
-          </h1>
-          <p className="text-sm text-text-muted mt-1">
-            {today}
-          </p>
+      <div className="sticky top-0 z-20 -mx-6 px-6 -mt-6 pt-6 pb-4 mb-6 backdrop-blur-sm bg-bg/90 border-b border-border-subtle space-y-4">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-text-primary flex items-center gap-2">
+              <CalendarDays className="w-6 h-6 text-accent" />
+              Today's Schedule
+            </h1>
+            <p className="text-sm text-text-muted mt-1">
+              {today}
+            </p>
+          </div>
+          <AddSessionModal onSessionCreated={fetchSessions} />
         </div>
-        <AddSessionModal onSessionCreated={fetchSessions} />
-      </div>
 
-      {/* Stats Row */}
-      <div className="flex flex-wrap gap-3">
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface border border-border text-xs font-medium text-text-primary shadow-sm">
-          <span className="text-text-muted">Total Today:</span> {sessions.length}
-        </div>
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface border border-border text-xs font-medium text-text-primary shadow-sm">
-          <span className="text-text-muted">In Progress:</span> {inProgressCount}
-        </div>
-        <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full shadow-sm text-xs font-medium ${
-          anomalyCount > 0 
-            ? 'bg-critical-bg border border-critical text-critical' 
+        {/* Stats Row */}
+        <div className="flex flex-wrap gap-3">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface border border-border text-xs font-medium text-text-primary shadow-sm">
+            <span className="text-text-muted">Total Today:</span> {sessions.length}
+          </div>
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface border border-border text-xs font-medium text-text-primary shadow-sm">
+            <span className="text-text-muted">In Progress:</span> {inProgressCount}
+          </div>
+          <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full shadow-sm text-xs font-medium ${anomalyCount > 0
+            ? 'bg-critical-bg border border-critical text-critical'
             : 'bg-surface border border-border text-text-primary'
-        }`}>
-          {anomalyCount > 0 && <AlertTriangle className="w-3.5 h-3.5" />}
-          <span className={anomalyCount > 0 ? '' : 'text-text-muted'}>Anomalies:</span> {anomalyCount}
+            }`}>
+            {anomalyCount > 0 && <AlertTriangle className="w-3.5 h-3.5" />}
+            <span className={anomalyCount > 0 ? '' : 'text-text-muted'}>Anomalies:</span> {anomalyCount}
+          </div>
         </div>
-      </div>
 
-      {/* Filter toggles */}
-      <div className="flex gap-2">
-        {([
-          { key: 'all', label: 'All' },
-          { key: 'anomalies', label: 'Anomalies Only' },
-          { key: 'in_progress', label: 'In Progress' },
-        ] as const).map(({ key, label }) => (
-          <Button
-            key={key}
-            variant="ghost"
-            size="sm"
-            onClick={() => setFilter(key)}
-            className={`rounded-full px-4 border transition-all ${
-              filter === key
+        {/* Filter toggles */}
+        <div className="flex gap-2">
+          {([
+            { key: 'all', label: 'All' },
+            { key: 'anomalies', label: 'Anomalies Only' },
+            { key: 'in_progress', label: 'In Progress' },
+          ] as const).map(({ key, label }) => (
+            <Button
+              key={key}
+              variant="ghost"
+              size="sm"
+              onClick={() => setFilter(key)}
+              className={`rounded-full px-4 border transition-all ${filter === key
                 ? 'bg-accent-glow border-accent text-accent hover:bg-accent-glow hover:text-accent'
                 : 'bg-transparent border-border text-text-muted hover:bg-surface-hover hover:text-text-primary'
-            }`}
-          >
-            {key === 'anomalies' && <AlertTriangle className="w-3.5 h-3.5 mr-1.5" />}
-            {label}
-          </Button>
-        ))}
+                }`}
+            >
+              {key === 'anomalies' && <AlertTriangle className="w-3.5 h-3.5 mr-1.5" />}
+              {label}
+            </Button>
+          ))}
+        </div>
       </div>
 
       {/* Session list */}
       {loading ? (
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="bg-surface border border-border-custom rounded-lg p-4 space-y-3">
+            <div key={i} className="bg-surface border border-border rounded-lg p-4 space-y-3">
               <div className="flex items-center gap-3">
                 <Skeleton className="h-4 w-32 bg-surface-alt" />
                 <Skeleton className="h-5 w-20 rounded-full bg-surface-alt" />
@@ -185,9 +185,9 @@ export default function TodaySchedule() {
       ) : (
         <div className="space-y-3 flex flex-col relative w-full">
           {filtered.map((session, index) => (
-            <SessionCard 
-              key={session._id} 
-              session={session} 
+            <SessionCard
+              key={session._id}
+              session={session}
               sequenceNumber={index + 1}
               isFirst={index === 0}
               isLast={index === filtered.length - 1}

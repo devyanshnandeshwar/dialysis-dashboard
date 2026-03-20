@@ -22,7 +22,7 @@ interface EditPatientModalProps {
 export default function EditPatientModal({ patient, onPatientUpdated }: EditPatientModalProps) {
   const [open, setOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  
+
   const [formData, setFormData] = useState({
     name: patient.name,
     dryWeight: patient.dryWeight.toString(),
@@ -50,7 +50,7 @@ export default function EditPatientModal({ patient, onPatientUpdated }: EditPati
         primaryDiagnosis: formData.primaryDiagnosis || undefined,
         assignedUnit: formData.assignedUnit || undefined,
       });
-      
+
       onPatientUpdated(updated);
       toast.success('Patient updated');
       setOpen(false);
@@ -70,7 +70,7 @@ export default function EditPatientModal({ patient, onPatientUpdated }: EditPati
         <Button
           size="sm"
           variant="ghost"
-          className="h-8 w-8 p-0 border border-transparent text-text-muted hover:text-accent hover:bg-accent-glow hover:border-accent/30 opacity-0 group-hover:opacity-100 transition-all rounded-md"
+          className="h-8 w-8 p-0 border border-transparent text-text-muted/80 hover:text-accent hover:bg-accent-glow hover:border-accent/30 transition-all rounded-md"
         >
           <Pencil className="w-4 h-4" />
         </Button>
@@ -135,7 +135,7 @@ export default function EditPatientModal({ patient, onPatientUpdated }: EditPati
               className={fieldClass}
             />
           </div>
-          
+
           <div className="space-y-1.5">
             <Label className="text-[10px] tracking-widest text-text-muted uppercase font-bold">Assigned Unit</Label>
             <Input

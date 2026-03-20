@@ -28,13 +28,13 @@ interface SessionCardProps {
   onPatientUpdated?: (patientId: string, updatedPatient: Patient) => void;
 }
 
-const SessionCard = React.memo(function SessionCard({ 
-  session, 
+const SessionCard = React.memo(function SessionCard({
+  session,
   sequenceNumber,
-  isFirst, 
-  isLast, 
+  isFirst,
+  isLast,
   isMoving,
-  onMoveUp, 
+  onMoveUp,
   onMoveDown,
   onPatientUpdated
 }: SessionCardProps) {
@@ -54,7 +54,7 @@ const SessionCard = React.memo(function SessionCard({
         const el = cardRef.current;
         el.style.transform = `translateY(${deltaY}px)`;
         el.style.transition = 'transform 0s';
-        
+
         requestAnimationFrame(() => {
           el.style.transform = 'translateY(0)';
           el.style.transition = 'transform 300ms cubic-bezier(0.4, 0, 0.2, 1)';
@@ -75,30 +75,30 @@ const SessionCard = React.memo(function SessionCard({
   return (
     <Card
       ref={cardRef}
-      className={`group bg-surface border border-border rounded-xl border-l-[4px] ${getBorderColor(session)} transition-all hover:bg-surface-hover hover:border-border-subtle shadow-[0_1px_3px_rgba(0,0,0,0.4)] ${isMoving ? 'opacity-60 ring-2 ring-accent ring-offset-2 ring-offset-bg' : ''}`}
+      className={`group bg-surface border border-border rounded-xl border-l-[6px] ${getBorderColor(session)} transition-all hover:bg-surface-hover hover:border-border-subtle shadow-[0_1px_3px_rgba(0,0,0,0.4)] ${isMoving ? 'opacity-60 ring-2 ring-accent ring-offset-2 ring-offset-bg queue-swap-flash' : ''}`}
     >
       <CardContent className="p-0">
-        <div className="flex w-full items-stretch min-h-[96px]">
-          
+        <div className="flex w-full items-stretch min-h-24">
+
           {/* Queue Left Fixed Section */}
           <div className="w-16 flex flex-col items-center justify-center border-r border-border bg-surface-alt/10 py-2 shrink-0">
-            <Button 
-              variant="ghost" 
-              size="icon" 
+            <Button
+              variant="ghost"
+              size="icon"
               className="h-7 w-7 text-text-muted hover:text-accent hover:bg-accent-glow disabled:opacity-20 disabled:hover:bg-transparent transition-colors rounded-md"
               disabled={isFirst || isMoving}
               onClick={() => onMoveUp && onMoveUp(session._id)}
             >
               <ChevronUp className="w-4 h-4" />
             </Button>
-            
+
             <div className="text-text-muted font-bold text-2xl my-0.5 w-full text-center tabular-nums">
               {isMoving ? <Loader2 className="w-5 h-5 animate-spin mx-auto text-accent" /> : sequenceNumber}
             </div>
-            
-            <Button 
-              variant="ghost" 
-              size="icon" 
+
+            <Button
+              variant="ghost"
+              size="icon"
               className="h-7 w-7 text-text-muted hover:text-accent hover:bg-accent-glow disabled:opacity-20 disabled:hover:bg-transparent transition-colors rounded-md"
               disabled={isLast || isMoving}
               onClick={() => onMoveDown && onMoveDown(session._id)}
@@ -121,7 +121,7 @@ const SessionCard = React.memo(function SessionCard({
                 </span>
               )}
             </div>
-            
+
             {/* Row 2: MRN + Reg Time */}
             <div className="flex items-center gap-2 mt-2 text-[11px] text-text-muted tracking-wide uppercase font-medium">
               <span className="text-text-secondary">
@@ -134,7 +134,7 @@ const SessionCard = React.memo(function SessionCard({
 
           {/* Vitals Fixed Columns */}
           <div className="hidden lg:flex shrink-0 items-center justify-center gap-6 px-6 border-l border-border-subtle">
-            
+
             {/* Weight Col */}
             <div className="flex flex-col gap-1 w-24">
               <div className="flex items-center gap-1.5 text-[10px] text-text-muted font-bold tracking-widest uppercase">
@@ -157,8 +157,8 @@ const SessionCard = React.memo(function SessionCard({
               <div className="text-sm font-medium text-text-primary">
                 {isNotStarted ? '—' : (
                   <span className="flex items-center gap-1">
-                    {session.preBloodPressure ? `${session.preBloodPressure.systolic}/${session.preBloodPressure.diastolic}` : '—'} 
-                    <span className="text-text-muted text-xs mx-0.5">→</span> 
+                    {session.preBloodPressure ? `${session.preBloodPressure.systolic}/${session.preBloodPressure.diastolic}` : '—'}
+                    <span className="text-text-muted text-xs mx-0.5">→</span>
                     {session.postBloodPressure ? `${session.postBloodPressure.systolic}/${session.postBloodPressure.diastolic}` : '—'}
                   </span>
                 )}
@@ -171,7 +171,7 @@ const SessionCard = React.memo(function SessionCard({
                 <Clock className="w-3.5 h-3.5 text-text-muted opacity-80" /> DURATION
               </div>
               <div className="text-sm font-medium text-text-primary">
-                 {isNotStarted ? '—' : `${session.sessionDurationMinutes ?? '—'} / ${session.targetDurationMinutes}m`}
+                {isNotStarted ? '—' : `${session.sessionDurationMinutes ?? '—'} / ${session.targetDurationMinutes}m`}
               </div>
             </div>
 
@@ -195,15 +195,15 @@ const SessionCard = React.memo(function SessionCard({
           <div className="shrink-0 flex flex-col justify-between items-center px-4 py-3 border-l border-border-subtle bg-surface-alt/40 rounded-r-xl">
             <div className="opacity-0 group-hover:opacity-100 transition-opacity">
               {onPatientUpdated && (
-                <EditPatientModal 
-                  patient={patient} 
-                  onPatientUpdated={(updated) => onPatientUpdated(patient._id, updated)} 
+                <EditPatientModal
+                  patient={patient}
+                  onPatientUpdated={(updated) => onPatientUpdated(patient._id, updated)}
                 />
               )}
             </div>
-            <Button 
-              variant="ghost" 
-              size="icon" 
+            <Button
+              variant="ghost"
+              size="icon"
               className="h-8 w-8 text-text-muted hover:text-accent hover:bg-surface rounded-md border border-transparent hover:border-border transition-all"
               onClick={() => setExpanded(!expanded)}
             >
@@ -213,7 +213,7 @@ const SessionCard = React.memo(function SessionCard({
         </div>
 
         {/* Expanded section */}
-        {expanded && (
+        <div className={`overflow-hidden transition-all duration-300 ease-out ${expanded ? 'max-h-105 opacity-100' : 'max-h-0 opacity-0'}`}>
           <div className="p-5 border-t border-border-subtle space-y-3 bg-surface-alt rounded-b-xl shadow-inner">
             {/* Mobile/Tablet fallback for vitals/anomalies */}
             <div className="flex xl:hidden flex-wrap gap-4 text-xs">
@@ -231,7 +231,7 @@ const SessionCard = React.memo(function SessionCard({
               onNotesSaved={setCurrentNotes}
             />
           </div>
-        )}
+        </div>
       </CardContent>
     </Card>
   );

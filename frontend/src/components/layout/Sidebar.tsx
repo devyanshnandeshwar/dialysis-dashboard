@@ -20,7 +20,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
 
   return (
     <aside
-      className={`fixed left-0 top-0 h-screen bg-bg border-r border-border flex flex-col z-50 transition-all duration-300 ${collapsed ? 'w-[68px]' : 'w-60'
+      className={`fixed left-0 top-0 h-screen bg-bg border-r border-border flex flex-col z-50 transition-all duration-300 ${collapsed ? 'w-17' : 'w-60'
         }`}
     >
       {/* Subtle top gradient */}
