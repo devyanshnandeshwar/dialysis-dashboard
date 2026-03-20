@@ -1,6 +1,5 @@
 import request from 'supertest';
 import express from 'express';
-import mongoose from 'mongoose';
 import sessionRoutes from '../sessionRoutes';
 import DialysisSession from '../../models/Session';
 import Patient from '../../models/Patient';
@@ -16,18 +15,16 @@ jest.mock('../../utils/anomalyDetector', () => ({
 }));
 
 describe('Session API Routes', () => {
-  let patientId: string;
-
   beforeAll(async () => {
     // Setup in-memory db or rely on proper mocks/test DB.
     // For simplicity, we mock mongoose methods since we don't have mongodb-memory-server loaded.
-    jest.spyOn(Patient, 'findById').mockResolvedValue({ 
-      _id: 'mock-patient-id', 
-      dryWeight: 70 
+    jest.spyOn(Patient, 'findById').mockResolvedValue({
+      _id: 'mock-patient-id',
+      dryWeight: 70
     } as any);
 
     jest.spyOn(DialysisSession, 'countDocuments').mockResolvedValue(0);
-    
+
     jest.spyOn(DialysisSession, 'create').mockImplementation((data: any) => Promise.resolve({
       _id: 'mock-session-id',
       ...data
@@ -76,7 +73,7 @@ describe('Session API Routes', () => {
 
   it('GET /api/sessions/today -> 200 returns array', async () => {
     const res = await request(app).get('/api/sessions/today');
-    
+
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body)).toBe(true);
     expect(res.body[0]).toHaveProperty('_id', 'mock-session-id');

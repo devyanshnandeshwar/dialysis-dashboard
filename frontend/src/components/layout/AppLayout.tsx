@@ -4,14 +4,10 @@ import Sidebar from './Sidebar';
 
 export default function AppLayout() {
   const [collapsed, setCollapsed] = useState(() => {
-    return localStorage.getItem('sidebar_collapsed') === 'true';
+    const stored = localStorage.getItem('sidebar_collapsed');
+    if (stored !== null) return stored === 'true';
+    return window.innerWidth < 1024;
   });
-
-  useEffect(() => {
-    if (window.innerWidth < 1024) {
-      setCollapsed(true);
-    }
-  }, []);
 
   useEffect(() => {
     localStorage.setItem('sidebar_collapsed', String(collapsed));
