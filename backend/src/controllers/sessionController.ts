@@ -151,3 +151,76 @@ export const getSessionById = async (
     next(err);
   }
 };
+
+/**
+ * PATCH /api/sessions/:id/queue — update queue position.
+ * Shifts other today's sessions up or down.
+ * Returns the full updated schedule.
+ */
+export const updateQueuePosition = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { queuePosition } = req.body;
+
+    if (typeof queuePosition !== 'number' || queuePosition < 1) {
+      res.status(400).json({ error: 'queuePosition must be a positive number' });
+      return;
+    }
+
+    const session = await DialysisSession.findById(req.params.id);
+    if (!session) {
+      res.status(404).json({ error: 'Session not found' });
+      return;
+    }
+
+    const oldPosition = session.queuePosition;
+    const newPosition = queuePosition;
+
+    // Get today's date range
+    const now = new Date();
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000);
+
+    if (oldPosition != null && oldPosition !== newPosition) {
+      if (newPosition < oldPosition) {
+        // Moving up: shift sessions in [newPosition, oldPosition-1] down by +1
+        await DialysisSession.updateMany(
+          {
+            scheduledDate: { $gte: startOfDay, $lt: endOfDay },
+            queuePosition: { $gte: newPosition, $lt: oldPosition },
+            _id: { $ne: session._id },
+          },
+          { $inc: { queuePosition: 1 } }
+        );
+      } else {
+        // Moving down: shift sessions in [oldPosition+1, newPosition] up by -1
+        await DialysisSession.updateMany(
+          {
+            scheduledDate: { $gte: startOfDay, $lt: endOfDay },
+            queuePosition: { $gt: oldPosition, $lte: newPosition },
+            _id: { $ne: session._id },
+          },
+          { $inc: { queuePosition: -1 } }
+        );
+      }
+    }
+
+    // Update target session's position
+    session.queuePosition = newPosition;
+    await session.save();
+
+    // Return full sorted schedule
+    const sessions = await DialysisSession.find({
+      scheduledDate: { $gte: startOfDay, $lt: endOfDay },
+    })
+      .populate('patientId', 'name mrn dryWeight')
+      .sort({ queuePosition: 1 });
+
+    res.json(sessions);
+  } catch (err) {
+    next(err);
+  }
+};

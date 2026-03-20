@@ -6,6 +6,7 @@ import {
   getTodaySessions,
   updateNurseNotes,
   getSessionById,
+  updateQueuePosition,
 } from '../controllers/sessionController';
 
 const router = Router();
@@ -39,5 +40,10 @@ router.get('/:id', getSessionById);
  * PATCH /api/sessions/:id/notes — update nurse notes
  */
 router.patch('/:id/notes', updateNurseNotes);
+
+/**
+ * PATCH /api/sessions/:id/queue — update queue position
+ */
+router.patch('/:id/queue', updateQueuePosition);
 
 export default router;

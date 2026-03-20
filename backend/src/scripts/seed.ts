@@ -148,12 +148,12 @@ const seed = async () => {
     ];
 
     // Run anomaly detection on each session before inserting
-    const sessionsToInsert = sessionInputs.map((input) => {
+    const sessionsToInsert = sessionInputs.map((input, index) => {
       const patient = createdPatients.find(
         (p) => p._id.toString() === input.patientId.toString()
       )!;
       const anomalies = detectAnomalies(input, patient, anomalyConfig);
-      return { ...input, anomalies };
+      return { ...input, anomalies, queuePosition: index + 1 };
     });
 
     const createdSessions = await DialysisSession.insertMany(sessionsToInsert);

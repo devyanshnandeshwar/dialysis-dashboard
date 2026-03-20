@@ -72,3 +72,45 @@ export const getPatientById = async (
     next(err);
   }
 };
+
+/**
+ * PATCH /api/patients/:id — update patient details.
+ * MRN is NOT editable.
+ */
+export const updatePatient = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { name, dryWeight, dateOfBirth, primaryDiagnosis, assignedUnit } =
+      req.body;
+
+    if (dryWeight !== undefined && (typeof dryWeight !== 'number' || dryWeight <= 0)) {
+      res.status(400).json({ error: 'dryWeight must be greater than 0' });
+      return;
+    }
+
+    const update: Record<string, unknown> = {};
+    if (name !== undefined) update.name = name;
+    if (dryWeight !== undefined) update.dryWeight = dryWeight;
+    if (dateOfBirth !== undefined) update.dateOfBirth = dateOfBirth;
+    if (primaryDiagnosis !== undefined) update.primaryDiagnosis = primaryDiagnosis;
+    if (assignedUnit !== undefined) update.assignedUnit = assignedUnit;
+
+    const patient = await Patient.findByIdAndUpdate(
+      req.params.id,
+      update,
+      { new: true, runValidators: true }
+    );
+
+    if (!patient) {
+      res.status(404).json({ error: 'Patient not found' });
+      return;
+    }
+
+    res.json(patient);
+  } catch (err) {
+    next(err);
+  }
+};

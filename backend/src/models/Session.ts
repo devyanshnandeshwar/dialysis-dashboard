@@ -24,6 +24,7 @@ export interface IDialysisSession extends Document {
   sessionDurationMinutes?: number;
   targetDurationMinutes: number;
   nurseNotes?: string;
+  queuePosition?: number;
   anomalies: IAnomaly[];
 }
 
@@ -91,6 +92,9 @@ const DialysisSessionSchema = new Schema<IDialysisSession>(
     },
     nurseNotes: {
       type: String,
+    },
+    queuePosition: {
+      type: Number,
     },
     anomalies: {
       type: [AnomalySchema],

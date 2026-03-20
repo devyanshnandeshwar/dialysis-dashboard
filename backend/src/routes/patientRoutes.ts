@@ -5,6 +5,7 @@ import {
   createPatient,
   getPatients,
   getPatientById,
+  updatePatient,
 } from '../controllers/patientController';
 
 const router = Router();
@@ -34,5 +35,10 @@ router.get('/', getPatients);
  * GET /api/patients/:id — single patient with last 5 sessions
  */
 router.get('/:id', getPatientById);
+
+/**
+ * PATCH /api/patients/:id — edit patient details (mrn not editable)
+ */
+router.patch('/:id', updatePatient);
 
 export default router;
