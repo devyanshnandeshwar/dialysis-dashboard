@@ -36,41 +36,38 @@ export default function TodaySchedule() {
 
   const handleMoveUp = async (id: string, currentPos: number) => {
     if (currentPos <= 1) return;
-    await handleReorder(id, currentPos - 1);
+    await handleReorder(id, 'up');
   };
 
-  const handleMoveDown = async (id: string, currentPos: number) => {
-    await handleReorder(id, currentPos + 1);
+  const handleMoveDown = async (id: string) => {
+    await handleReorder(id, 'down');
   };
 
-  const handleReorder = async (id: string, newPos: number) => {
+  const handleReorder = async (id: string, direction: 'up' | 'down') => {
     try {
       setMovingSessionId(id);
       
-      // Optimistic UI update
+      // Optimistic UI update (swap)
       setSessions(prev => {
         const cloned = [...prev];
         const targetIdx = cloned.findIndex(s => s._id === id);
         if (targetIdx === -1) return prev;
         
         const currentPos = cloned[targetIdx].queuePosition || 0;
+        const targetPos = direction === 'up' ? currentPos - 1 : currentPos + 1;
         
-        // Adjust others logically
-        cloned.forEach(s => {
-          if (!s.queuePosition || s._id === id) return;
-          if (newPos < currentPos && s.queuePosition >= newPos && s.queuePosition < currentPos) {
-            s.queuePosition += 1;
-          } else if (newPos > currentPos && s.queuePosition > currentPos && s.queuePosition <= newPos) {
-            s.queuePosition -= 1;
-          }
-        });
+        const adjacentIdx = cloned.findIndex(s => s.queuePosition === targetPos);
         
-        cloned[targetIdx].queuePosition = newPos;
+        if (adjacentIdx !== -1) {
+            cloned[adjacentIdx].queuePosition = currentPos;
+            cloned[targetIdx].queuePosition = targetPos;
+        }
+        
         return cloned.sort((a, b) => (a.queuePosition || 999) - (b.queuePosition || 999));
       });
 
       // API call
-      const updatedSchedule = await updateQueuePosition(id, newPos);
+      const updatedSchedule = await updateQueuePosition(id, direction);
       setSessions(updatedSchedule); // Sync with source of truth
     } catch {
       toast.error('Failed to reorder session');
@@ -188,7 +185,7 @@ export default function TodaySchedule() {
               isLast={index === filtered.length - 1}
               isMoving={movingSessionId === session._id}
               onMoveUp={handleMoveUp}
-              onMoveDown={handleMoveDown}
+              onMoveDown={() => handleMoveDown(session._id)}
               onPatientUpdated={handlePatientUpdated}
             />
           ))}

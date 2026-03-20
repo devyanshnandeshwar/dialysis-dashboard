@@ -30,10 +30,10 @@ export const updateNurseNotes = async (
 
 export const updateQueuePosition = async (
   id: string,
-  queuePosition: number
+  direction: 'up' | 'down'
 ): Promise<DialysisSession[]> => {
   const { data } = await client.patch<DialysisSession[]>(`/sessions/${id}/queue`, {
-    queuePosition,
+    direction,
   });
   return data;
 };
