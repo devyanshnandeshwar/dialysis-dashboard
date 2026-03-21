@@ -112,7 +112,7 @@ export default function CompleteSessionModal({
     return (
         <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
-                <Button size="sm" className="bg-accent text-white hover:brightness-110 w-full h-10 px-4 rounded-lg shadow-sm whitespace-nowrap">
+                <Button size="sm" className="bg-accent text-[#08101d] hover:brightness-110 w-full h-10 px-4 rounded-lg shadow-sm whitespace-nowrap font-semibold">
                     <span className="hidden sm:inline">Complete Session</span>
                     <span className="sm:hidden">Complete</span>
                 </Button>
@@ -192,7 +192,7 @@ export default function CompleteSessionModal({
                     <Button
                         onClick={handleSubmit}
                         disabled={submitting}
-                        className="w-full bg-accent text-white hover:brightness-110 shadow-md font-semibold text-sm mt-2 mb-2"
+                        className="w-full bg-accent text-[#08101d] hover:brightness-110 shadow-md font-semibold text-sm mt-2 mb-2"
                     >
                         {submitting ? (
                             <>

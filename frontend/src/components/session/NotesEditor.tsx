@@ -55,7 +55,7 @@ export default function NotesEditor({
             size="sm"
             onClick={handleSave}
             disabled={saving}
-            className="bg-accent text-white hover:brightness-110 h-8 text-xs gap-1.5 rounded-md shadow-sm"
+            className="bg-accent text-[#08101d] hover:brightness-110 h-8 text-xs gap-1.5 rounded-md shadow-sm font-semibold"
           >
             {saving ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -90,6 +90,7 @@ export default function NotesEditor({
       <Button
         size="sm"
         variant="ghost"
+        aria-label="Edit nurse notes"
         className="opacity-0 group-hover:opacity-100 transition-opacity h-7 w-7 p-0 text-text-muted hover:text-accent hover:bg-accent-glow shrink-0 rounded-md"
       >
         <Pencil className="w-3.5 h-3.5" />

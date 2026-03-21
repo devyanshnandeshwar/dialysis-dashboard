@@ -7,12 +7,12 @@ const config: Record<Status, { label: string; className: string; showPulse?: boo
   },
   in_progress: {
     label: 'In Progress',
-    className: 'bg-accent-glow text-accent',
+    className: 'bg-accent/25 text-text-primary border border-accent/60',
     showPulse: true,
   },
   completed: {
     label: 'Completed',
-    className: 'bg-success-bg text-success',
+    className: 'bg-success/25 text-text-primary border border-success/50',
   },
 };
 

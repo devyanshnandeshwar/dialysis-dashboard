@@ -53,8 +53,8 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
             className={({ isActive }) =>
               `flex items-center gap-3 py-2.5 rounded-lg text-sm transition-colors ${collapsed ? 'px-0 justify-center' : 'px-3'
               } ${isActive
-                ? 'bg-accent-glow text-accent border-l-2 border-accent font-medium'
-                : 'text-text-muted hover:text-text-primary hover:bg-surface border-l-2 border-transparent'
+                ? 'bg-accent/25 text-text-primary border-l-2 border-accent font-medium'
+                : 'text-text-secondary hover:text-text-primary hover:bg-surface border-l-2 border-transparent'
               }`
             }
           >
@@ -65,7 +65,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
       </nav>
 
       <div className="p-3 border-t border-border-subtle flex items-center justify-between relative z-10">
-        {!collapsed && <p className="text-xs text-text-muted px-2">v1.0.0</p>}
+        {!collapsed && <p className="text-xs text-text-secondary px-2">v1.0.0</p>}
         <div className={`flex items-center ${collapsed ? 'w-full justify-center gap-1' : 'gap-1 ml-auto'}`}>
           <Button
             variant="ghost"
@@ -73,7 +73,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
             onClick={toggleTheme}
             aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
             title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-            className={`${collapsed ? '' : 'px-2'} text-text-muted hover:text-text-primary hover:bg-surface`}
+            className={`${collapsed ? '' : 'px-2'} text-text-secondary hover:text-text-primary hover:bg-surface`}
           >
             {theme === 'dark' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
             {!collapsed && <span>{theme === 'dark' ? 'Dark' : 'Light'}</span>}
@@ -83,7 +83,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
             size="icon"
             onClick={onToggle}
             aria-label="Collapse sidebar"
-            className="text-text-muted hover:text-text-primary hover:bg-surface"
+            className="text-text-secondary hover:text-text-primary hover:bg-surface"
           >
             {collapsed ? <PanelLeftOpen className="w-5 h-5" /> : <PanelLeftClose className="w-5 h-5" />}
           </Button>

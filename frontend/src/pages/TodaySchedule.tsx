@@ -125,7 +125,7 @@ export default function TodaySchedule() {
               <CalendarDays className="w-6 h-6 text-accent" />
               Today's Schedule
             </h1>
-            <p className="text-sm text-text-muted mt-1">
+            <p className="text-sm text-text-secondary mt-1">
               {today}
             </p>
           </div>
@@ -135,20 +135,20 @@ export default function TodaySchedule() {
         {/* Stats Row */}
         <div className="flex flex-wrap gap-3">
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface border border-border text-xs font-medium text-text-primary shadow-sm">
-            <span className="text-text-muted">In Progress:</span> {summary.inProgress}
+            <span className="text-text-secondary">In Progress:</span> {summary.inProgress}
           </div>
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface border border-border text-xs font-medium text-text-primary shadow-sm">
-            <span className="text-text-muted">Upcoming:</span> {summary.notStarted}
+            <span className="text-text-secondary">Upcoming:</span> {summary.notStarted}
           </div>
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface border border-border text-xs font-medium text-text-primary shadow-sm">
-            <span className="text-text-muted">Completed:</span> {summary.completed}
+            <span className="text-text-secondary">Completed:</span> {summary.completed}
           </div>
           <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full shadow-sm text-xs font-medium ${anomalyCount > 0
-            ? 'bg-critical-bg border border-critical text-critical'
+            ? 'bg-critical/25 border border-critical/60 text-text-primary'
             : 'bg-surface border border-border text-text-primary'
             }`}>
             {anomalyCount > 0 && <AlertTriangle className="w-3.5 h-3.5" />}
-            <span className={anomalyCount > 0 ? '' : 'text-text-muted'}>Anomalies:</span> {anomalyCount}
+            <span className={anomalyCount > 0 ? '' : 'text-text-secondary'}>Anomalies:</span> {anomalyCount}
           </div>
         </div>
 
@@ -167,8 +167,8 @@ export default function TodaySchedule() {
               size="sm"
               onClick={() => setFilter(key)}
               className={`rounded-full px-4 border transition-all ${filter === key
-                ? 'bg-accent-glow border-accent text-accent hover:bg-accent-glow hover:text-accent'
-                : 'bg-transparent border-border text-text-muted hover:bg-surface-hover hover:text-text-primary'
+                ? 'bg-accent/25 border-accent/70 text-text-primary hover:bg-accent/30 hover:text-text-primary'
+                : 'bg-transparent border-border text-text-secondary hover:bg-surface-hover hover:text-text-primary'
                 }`}
             >
               {key === 'anomalies' && <AlertTriangle className="w-3.5 h-3.5 mr-1.5" />}

@@ -56,7 +56,7 @@ describe('SessionCard', () => {
       ],
     };
     renderCard(session);
-    expect(screen.getByText(/high post bp/i)).toBeDefined();
+    expect(screen.getByText(/high bp/i)).toBeDefined();
   });
 
   it('shows no anomaly badges when anomalies array is empty', () => {

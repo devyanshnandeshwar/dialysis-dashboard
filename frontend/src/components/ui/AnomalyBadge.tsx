@@ -4,11 +4,11 @@ import type { Anomaly } from '@/types';
 
 const severityConfig = {
   warning: {
-    className: 'bg-warning/10 text-warning border-warning/30 hover:bg-warning/10',
+    className: 'bg-warning/22 text-text-primary border-warning/50 hover:bg-warning/28',
     Icon: AlertTriangle,
   },
   critical: {
-    className: 'bg-critical/10 text-critical border-critical/30 hover:bg-critical/10',
+    className: 'bg-critical/22 text-text-primary border-critical/55 hover:bg-critical/28',
     Icon: AlertCircle,
   },
 };
@@ -16,7 +16,7 @@ const severityConfig = {
 export default function AnomalyBadge({ anomaly }: { anomaly: Anomaly }) {
   const { className, Icon } = severityConfig[anomaly.severity];
   const anomalyClassName = anomaly.type === 'long_session'
-    ? 'bg-accent-glow text-accent border-accent/40 hover:bg-accent-glow'
+    ? 'bg-accent/25 text-text-primary border-accent/60 hover:bg-accent/30'
     : className;
 
   const typeLabels: Record<string, string> = {

@@ -138,7 +138,7 @@ export default function EditPatientModal({ patient, onPatientUpdated }: EditPati
           <Button
             onClick={handleSubmit}
             disabled={submitting}
-            className="w-full bg-accent text-white hover:brightness-110 shadow-md font-semibold text-sm mt-2 mb-2"
+            className="w-full bg-accent text-[#08101d] hover:brightness-110 shadow-md font-semibold text-sm mt-2 mb-2"
           >
             {submitting ? (
               <>

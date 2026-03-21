@@ -94,7 +94,7 @@ function AnomalyBadges({ anomalies }: AnomalyBadgesProps) {
         anomalies.map((anom, i) => (
           <div
             key={i}
-            className={`flex items-center gap-1.5 text-[10px] tracking-wide font-semibold px-2.5 py-1 rounded-full border whitespace-nowrap w-full text-left truncate transition-colors ${anom.severity === 'critical' ? 'bg-critical-bg text-critical border-critical/45' : 'bg-warning-bg text-warning border-warning/45'}`}
+            className={`flex items-center gap-1.5 text-[10px] tracking-wide font-semibold px-2.5 py-1 rounded-full border whitespace-nowrap w-full text-left truncate transition-colors ${anom.severity === 'critical' ? 'bg-critical/25 text-text-primary border-critical/60' : 'bg-warning/25 text-text-primary border-warning/60'}`}
             title={anom.message}
           >
             <AlertTriangle className="w-3 h-3 shrink-0 opacity-90" />
@@ -102,7 +102,7 @@ function AnomalyBadges({ anomalies }: AnomalyBadgesProps) {
           </div>
         ))
       ) : (
-        <div className="text-[11px] text-text-muted uppercase tracking-widest font-semibold text-center w-full">NO ALERTS</div>
+        <div className="text-[11px] text-text-secondary uppercase tracking-widest font-semibold text-center w-full">NO ALERTS</div>
       )}
     </div>
   );
@@ -250,9 +250,9 @@ const SessionCard = React.memo(function SessionCard({
               {session.machineId && (
                 <span
                   className={`inline-flex items-center gap-1 text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded shrink-0 border tracking-wide whitespace-nowrap ${isInProgress
-                    ? 'bg-accent-glow text-accent border-border'
+                    ? 'bg-accent/25 text-text-primary border-accent/55'
                     : isCompleted
-                      ? 'bg-success-bg text-success border-success/40'
+                      ? 'bg-success/25 text-text-primary border-success/50'
                       : 'bg-surface-alt text-text-secondary border-border-subtle'
                     }`}
                 >
