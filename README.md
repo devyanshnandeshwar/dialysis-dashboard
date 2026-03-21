@@ -54,34 +54,108 @@ npm run lint       # ESLint + TypeScript checks
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    Frontend (React + Vite)                   │
-│  PatientsPage.tsx | TodaySchedule.tsx | SessionCard.tsx      │
-└─────────────┬───────────────────────────────────────────────┘
-              │ Axios HTTP Requests
-              ↓
-┌─────────────────────────────────────────────────────────────┐
-│            Backend (Express + TypeScript)                    │
-│  ┌──────────────────────────────────────────────────────┐   │
-│  │ Routes: /patients, /sessions, /queue                 │   │
-│  └──────┬───────────────────────────────────────────────┘   │
-│         ↓                                                     │
-│  ┌──────────────────────────────────────────────────────┐   │
-│  │ Controllers: patientController, sessionController    │   │
-│  │   ↓ Calls                                            │   │
-│  │ anomalyDetector.ts (pure function)                  │   │
-│  │ Uses thresholds from anomalyConfig.ts               │   │
-│  └──────┬───────────────────────────────────────────────┘   │
-│         ↓                                                     │
-│  Mongoose Models: Patient, DialysisSession                   │
-└─────────────┬───────────────────────────────────────────────┘
-              │ MongoDB Driver
-              ↓
-        MongoDB Atlas
+### System Architecture Diagram
+
+```mermaid
+graph TB
+    subgraph UI["🖥️ Frontend (React + Vite)"]
+        A1["PatientsPage.tsx"]
+        A2["TodaySchedule.tsx"]
+        A3["SessionCard.tsx"]
+        API["Axios HTTP Client<br/>api/patients.ts<br/>api/sessions.ts"]
+    end
+    
+    subgraph Server["🔧 Backend (Express + TypeScript)"]
+        Routes["Routes<br/>/patients<br/>/sessions<br/>/queue"]
+        Controllers["Controllers<br/>patientController<br/>sessionController"]
+        Anomaly["Anomaly Detection<br/>anomalyDetector.ts<br/>anomalyConfig.ts"]
+        Models["Mongoose Models<br/>Patient<br/>DialysisSession"]
+    end
+    
+    subgraph DB["💾 Data Layer"]
+        Mongo["MongoDB Atlas<br/>Collections:<br/>patients<br/>sessions"]
+    end
+    
+    A1 --> API
+    A2 --> API
+    A3 --> API
+    API --> Routes
+    Routes --> Controllers
+    Controllers --> Anomaly
+    Anomaly --> Models
+    Models --> Mongo
+    
+    style UI fill:#e1f5ff
+    style Server fill:#f3e5f5
+    style DB fill:#e8f5e9
 ```
 
-**Request Flow**: React component → API client (`api/`) → Axios → Express route → Controller → Mongoose model → MongoDB. Anomalies computed server-side, passed in API response.
+**Request Flow**: React component → Axios HTTP client → Express route → Controller → Anomaly detector → Mongoose model → MongoDB. Anomalies computed server-side, included in API response.
+
+---
+
+### Session Lifecycle State Diagram
+
+```mermaid
+stateDiagram-v2
+    [*] --> pending: Patient registered
+    
+    pending --> not_started: Added to today's schedule
+    pending --> registered_only: No session scheduled<br/>for today
+    
+    not_started --> in_progress: Nurse records<br/>pre-weight & vitals
+    not_started --> cancelled: Session cancelled
+    
+    in_progress --> completed: Nurse records<br/>post-weight & vitals
+    in_progress --> cancelled: Session interrupted
+    
+    completed --> [*]: Session archived
+    cancelled --> [*]: Logged & reviewed
+    registered_only --> [*]
+    
+    note right of not_started
+        ⚠️ Cannot start without<br/>pre-weight > 0
+    end note
+    
+    note right of completed
+        ✅ Anomalies calculated<br/>& flagged if any
+    end note
+```
+
+---
+
+### Anomaly Detection Logic
+
+```mermaid
+graph TD
+    A["Session Completed<br/>with vitals"] --> B{Calculate<br/>Weight Gain}
+    
+    B -->|gain ≥ 3.0 kg| C["🔴 Critical:<br/>Excess Weight Gain"]
+    B -->|2.0 ≤ gain < 3.0| D["⚠️ Warning:<br/>Excess Weight Gain"]
+    B -->|gain < 2.0| E["✅ Normal<br/>Weight Gain"]
+    
+    A --> F{Check Post<br/>Systolic BP}
+    F -->|BP ≥ 160 mmHg| G["🔴 Critical:<br/>High Post-BP"]
+    F -->|BP < 160 mmHg| H["✅ Normal<br/>Blood Pressure"]
+    
+    A --> I{Calculate<br/>Duration}
+    I -->|duration < target - 30| J["⚠️ Warning:<br/>Short Session"]
+    I -->|duration > target + 60| K["⚠️ Warning:<br/>Long Session"]
+    I -->|target ± 30| L["✅ Normal<br/>Duration"]
+    
+    C --> M["Anomalies Array<br/>sent to UI"]
+    D --> M
+    G --> M
+    J --> M
+    K --> M
+    
+    style M fill:#fff9c4
+    style C fill:#ffcdd2
+    style D fill:#ffe0b2
+    style G fill:#ffcdd2
+    style J fill:#ffe0b2
+    style K fill:#ffe0b2
+```
 
 ---
 
@@ -223,6 +297,60 @@ http://localhost:5000
 
 ---
 
+## Nurse Workflow
+
+```mermaid
+sequenceDiagram
+    participant Nurse
+    participant UI as UI<br/>TodaySchedule
+    participant API as Backend API
+    participant DB as MongoDB
+    
+    Nurse->>UI: 1. Load Today's Schedule
+    UI->>API: GET /api/sessions/today
+    API->>DB: Query sessions for date
+    API->>API: Detect anomalies
+    API-->>UI: Return sessions with anomalies
+    UI-->>Nurse: Display sessions (In Progress,<br/>Upcoming, Completed)
+    
+    rect rgb(200, 220, 255)
+    Note over Nurse,DB: Filter by anomalies
+    Nurse->>UI: 2. Click "Anomalies" filter
+    UI-->>Nurse: Show only sessions<br/>with alerts
+    end
+    
+    rect rgb(255, 240, 200)
+    Note over Nurse,DB: Start a session
+    Nurse->>UI: 3. Click "Start Session"
+    UI->>API: POST /api/sessions
+    API->>API: Validate pre-weight > 0
+    API->>DB: Create new session
+    API-->>UI: Return session object
+    UI-->>Nurse: Show session in<br/>"In Progress"
+    end
+    
+    rect rgb(240, 255, 240)
+    Note over Nurse,DB: Nurse edits notes during session
+    Nurse->>UI: 4. Click notes icon
+    UI->>API: PATCH /api/sessions/notes
+    API->>DB: Update notes
+    API-->>UI: Confirm save
+    UI-->>Nurse: Notes saved ✓
+    end
+    
+    rect rgb(255, 240, 240)
+    Note over Nurse,DB: Complete session
+    Nurse->>UI: 5. Click "Complete Session"
+    UI->>API: PATCH /api/sessions/:id<br/>(with post vitals)
+    API->>API: Calculate anomalies
+    API->>DB: Update session status<br/>+ anomalies
+    API-->>UI: Return completed session
+    UI-->>Nurse: Show anomaly badges<br/>(if any)
+    end
+```
+
+---
+
 ## Clinical Assumptions & Trade-offs
 
 All thresholds and rules are **configurable** in [`backend/src/config/anomalyConfig.ts`](backend/src/config/anomalyConfig.ts). No magic numbers are scattered in business logic.
@@ -337,6 +465,47 @@ npm test
 
 ## Data Model
 
+### Entity Relationship Diagram
+
+```mermaid
+erDiagram
+    PATIENT ||--o{ DIALYSIS_SESSION : has
+    
+    PATIENT {
+        ObjectId _id
+        string mrn "unique, immutable"
+        string name
+        date dateOfBirth
+        string primaryDiagnosis
+        float dryWeight "kg"
+        date createdAt
+        date updatedAt
+    }
+    
+    DIALYSIS_SESSION {
+        ObjectId _id
+        ObjectId patientId "references Patient"
+        date date
+        string status "not_started|in_progress|completed|pending"
+        float preWeight "kg"
+        int preHeartRate "bpm"
+        string preBP "systolic/diastolic"
+        float postWeight "kg"
+        int postHeartRate "bpm"
+        string postBP "systolic/diastolic"
+        int targetDuration "minutes"
+        int duration "minutes"
+        string machineId
+        string notes
+        object anomalies "array of detected anomalies"
+        int queuePosition
+        date createdAt
+        date updatedAt
+    }
+```
+
+---
+
 ### Patient Schema (MongoDB)
 ```typescript
 {
@@ -415,6 +584,73 @@ The seed script populates 6 patients with varied session scenarios:
    - Demonstrates patient without active session
 
 Run `npm run seed` in the backend to populate the database.
+
+---
+
+## Frontend Component Hierarchy
+
+```mermaid
+graph TB
+    subgraph App["App.tsx"]
+        AppLayout["AppLayout.tsx"]
+        Sidebar["Sidebar.tsx"]
+    end
+    
+    subgraph Pages["Pages"]
+        PS["PatientsPage.tsx"]
+        TS["TodaySchedule.tsx"]
+    end
+    
+    subgraph Modals["Patient Modals"]
+        APM["AddPatientModal.tsx"]
+        EPM["EditPatientModal.tsx"]
+        PHM["PatientHistoryModal.tsx"]
+    end
+    
+    subgraph SessionComp["Session Components"]
+        SC["SessionCard.tsx"]
+        ASM["AddSessionModal.tsx"]
+        CSM["CompleteSessionModal.tsx"]
+        NE["NotesEditor.tsx"]
+    end
+    
+    subgraph UI["UI Components"]
+        AB["AnomalyBadge.tsx"]
+        SB["StatusBadge.tsx"]
+        Card["card.tsx"]
+        Button["button.tsx"]
+        Dialog["dialog.tsx"]
+    end
+    
+    AppLayout --> Sidebar
+    AppLayout --> Pages
+    
+    PS --> APM
+    PS --> EPM
+    PS --> PHM
+    
+    TS --> ASM
+    TS --> SC
+    SC --> CSM
+    SC --> NE
+    
+    SC --> AB
+    SC --> SB
+    SC --> Card
+    SC --> Button
+    
+    APM --> Dialog
+    EPM --> Dialog
+    CSM --> Dialog
+    
+    SC --> UI
+    
+    style App fill:#e1f5ff
+    style Pages fill:#f3e5f5
+    style Modals fill:#fff3e0
+    style SessionComp fill:#e8f5e9
+    style UI fill:#f1f8e9
+```
 
 ---
 
