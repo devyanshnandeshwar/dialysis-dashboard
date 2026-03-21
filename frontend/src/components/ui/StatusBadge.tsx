@@ -3,16 +3,16 @@ type Status = 'not_started' | 'in_progress' | 'completed';
 const config: Record<Status, { label: string; className: string; showPulse?: boolean }> = {
   not_started: {
     label: 'Not Started',
-    className: 'bg-surface-alt text-text-secondary',
+    className: 'bg-surface-alt/70 text-text-secondary border border-border-subtle shadow-xs',
   },
   in_progress: {
     label: 'In Progress',
-    className: 'bg-accent/25 text-text-primary border border-accent/60',
+    className: 'bg-accent/15 text-text-primary border border-accent/40 shadow-xs',
     showPulse: true,
   },
   completed: {
     label: 'Completed',
-    className: 'bg-success/25 text-text-primary border border-success/50',
+    className: 'bg-success/15 text-text-primary border border-success/40 shadow-xs',
   },
 };
 

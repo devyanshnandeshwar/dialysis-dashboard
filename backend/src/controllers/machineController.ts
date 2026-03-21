@@ -1,7 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import DialysisSession from '../models/Session';
-import { MACHINES } from '../config/machines';
-import { getTodayRange } from '../utils/dateUtils';
+import { MachineService } from '../services/machineService';
 
 export const getMachines = async (
     _req: Request,
@@ -9,26 +7,7 @@ export const getMachines = async (
     next: NextFunction
 ) => {
     try {
-        const { start: startOfDay, end: endOfDay } = getTodayRange();
-
-        const activeSessions = await DialysisSession.find(
-            {
-                scheduledDate: { $gte: startOfDay, $lte: endOfDay },
-                status: { $in: ['not_started', 'in_progress'] },
-                machineId: { $ne: null },
-            },
-            { machineId: 1 }
-        ).lean();
-
-        const inUseMachineIds = activeSessions
-            .map((session) => session.machineId)
-            .filter((machineId): machineId is string => Boolean(machineId));
-
-        const machines = MACHINES.map((machine) => ({
-            ...machine,
-            status: inUseMachineIds.includes(machine.id) ? 'in_use' : 'available',
-        }));
-
+        const machines = await MachineService.getMachinesWithStatus();
         res.json({ machines });
     } catch (err) {
         next(err);

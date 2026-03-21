@@ -1,12 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
-import { getTodaySessions, updateQueuePosition } from '@/api/sessions';
+import { useState, useCallback } from 'react';
+import { useTodaySessions } from '@/hooks/useTodaySessions';
 import SessionCard from '@/components/session/SessionCard';
 import AddSessionModal from '@/components/session/AddSessionModal';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CalendarDays, AlertTriangle, Loader2 } from 'lucide-react';
-import { toast } from 'sonner';
-import type { DialysisSession, Patient, TodaySessionsSummary } from '@/types';
 
 type FilterCategory = 'all' | 'anomalies' | 'upcoming' | 'in_progress' | 'completed';
 
@@ -20,86 +18,27 @@ const TODAY_DATE_FORMAT: Intl.DateTimeFormatOptions = {
 };
 
 export default function TodaySchedule() {
-  const emptySummary: TodaySessionsSummary = {
-    total: 0,
-    inProgress: 0,
-    notStarted: 0,
-    completed: 0,
-    withAnomalies: 0,
-  };
+  const { 
+    sessions, 
+    summary, 
+    loading, 
+    movingSessionId, 
+    fetchSessions, 
+    reorderSession, 
+    updatePatientInSession 
+  } = useTodaySessions();
 
-  const [sessions, setSessions] = useState<DialysisSession[]>([]);
-  const [summary, setSummary] = useState<TodaySessionsSummary>(emptySummary);
-  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<FilterCategory>('all');
-  const [movingSessionId, setMovingSessionId] = useState<string | null>(null);
-
-  const fetchSessions = useCallback(async () => {
-    try {
-      setLoading(true);
-      const data = await getTodaySessions();
-      setSessions(data.sessions);
-      setSummary(data.summary);
-    } catch {
-      toast.error('Failed to load today\'s sessions');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchSessions();
-  }, [fetchSessions]);
-
-  const handleReorder = useCallback(async (
-    id: string,
-    direction: 'up' | 'down',
-    currentIndex: number,
-    targetIndex: number
-  ) => {
-    try {
-      setMovingSessionId(id);
-
-      // Optimistic visual swap via array index
-      setSessions(prev => {
-        const cloned = [...prev];
-        const temp = cloned[currentIndex];
-        cloned[currentIndex] = cloned[targetIndex];
-        cloned[targetIndex] = temp;
-        return cloned;
-      });
-
-      // Background API call
-      const updatedSchedule = await updateQueuePosition(id, direction);
-
-      // Re-sync with server source of truth to ensure queuePosition fields match
-      setSessions(updatedSchedule);
-    } catch {
-      toast.error('Failed to reorder session');
-      fetchSessions(); // Revert on failure
-    } finally {
-      setMovingSessionId(null);
-    }
-  }, [fetchSessions]);
 
   const handleMoveUp = useCallback(async (id: string, index: number) => {
     if (index === 0) return;
-    await handleReorder(id, 'up', index, index - 1);
-  }, [handleReorder]);
+    await reorderSession(id, 'up', index, index - 1);
+  }, [reorderSession]);
 
   const handleMoveDown = useCallback(async (id: string, index: number) => {
     if (index === sessions.length - 1) return;
-    await handleReorder(id, 'down', index, index + 1);
-  }, [handleReorder, sessions.length]);
-
-  const handlePatientUpdated = useCallback((patientId: string, updatedPatient: Patient) => {
-    setSessions(prev => prev.map(session => {
-      if ((session.patientId as Patient)._id === patientId) {
-        return { ...session, patientId: updatedPatient };
-      }
-      return session;
-    }));
-  }, []);
+    await reorderSession(id, 'down', index, index + 1);
+  }, [reorderSession, sessions.length]);
 
   const filtered = sessions.filter((s) => {
     if (filter === 'all') return true;
@@ -117,15 +56,15 @@ export default function TodaySchedule() {
 
   return (
     <div className="max-w-7xl mx-auto space-y-6 pb-10">
-      <div className={`sticky ${HEADER_OFFSET_CLASS} z-20 -mx-6 px-6 -mt-6 pt-6 pb-4 mb-6 backdrop-blur-sm bg-bg/90 border-b border-border-subtle space-y-4`}>
+      <div className={`sticky ${HEADER_OFFSET_CLASS} z-20 -mx-6 px-6 -mt-6 pt-6 pb-5 mb-6 backdrop-blur-md bg-bg/85 border-b border-border-subtle shadow-[0_4px_24px_rgba(0,0,0,0.04)] space-y-5`}>
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-text-primary flex items-center gap-2">
+            <h1 className="text-2xl font-bold text-text-primary flex items-center gap-2.5">
               <CalendarDays className="w-6 h-6 text-accent" />
               Today's Schedule
             </h1>
-            <p className="text-sm text-text-secondary mt-1">
+            <p className="text-sm font-medium text-text-secondary mt-1">
               {today}
             </p>
           </div>
@@ -134,21 +73,21 @@ export default function TodaySchedule() {
 
         {/* Stats Row */}
         <div className="flex flex-wrap gap-3">
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface border border-border text-xs font-medium text-text-primary shadow-sm">
-            <span className="text-text-secondary">In Progress:</span> {summary.inProgress}
+          <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-surface-alt/60 border border-border-subtle text-xs font-medium text-text-primary shadow-xs">
+            <span className="text-text-muted font-semibold tracking-wide uppercase text-[10px]">In Progress:</span> {summary.inProgress}
           </div>
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface border border-border text-xs font-medium text-text-primary shadow-sm">
-            <span className="text-text-secondary">Upcoming:</span> {summary.notStarted}
+          <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-surface-alt/60 border border-border-subtle text-xs font-medium text-text-primary shadow-xs">
+            <span className="text-text-muted font-semibold tracking-wide uppercase text-[10px]">Upcoming:</span> {summary.notStarted}
           </div>
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface border border-border text-xs font-medium text-text-primary shadow-sm">
-            <span className="text-text-secondary">Completed:</span> {summary.completed}
+          <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-surface-alt/60 border border-border-subtle text-xs font-medium text-text-primary shadow-xs">
+            <span className="text-text-muted font-semibold tracking-wide uppercase text-[10px]">Completed:</span> {summary.completed}
           </div>
-          <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full shadow-sm text-xs font-medium ${anomalyCount > 0
-            ? 'bg-critical/25 border border-critical/60 text-text-primary'
-            : 'bg-surface border border-border text-text-primary'
+          <div className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full shadow-xs text-xs font-medium ${anomalyCount > 0
+            ? 'bg-critical/15 border border-critical/30 text-text-primary'
+            : 'bg-surface-alt/60 border border-border-subtle text-text-primary'
             }`}>
             {anomalyCount > 0 && <AlertTriangle className="w-3.5 h-3.5" />}
-            <span className={anomalyCount > 0 ? '' : 'text-text-secondary'}>Anomalies:</span> {anomalyCount}
+            <span className={anomalyCount > 0 ? 'text-[10px] font-semibold tracking-wide uppercase' : 'text-text-muted font-semibold tracking-wide uppercase text-[10px]'}>Anomalies:</span> {anomalyCount}
           </div>
         </div>
 
@@ -216,7 +155,7 @@ export default function TodaySchedule() {
               isMoving={movingSessionId === session._id}
               onMoveUp={() => handleMoveUp(session._id, index)}
               onMoveDown={() => handleMoveDown(session._id, index)}
-              onPatientUpdated={handlePatientUpdated}
+              onPatientUpdated={updatePatientInSession}
               onSessionUpdated={fetchSessions}
             />
           ))}

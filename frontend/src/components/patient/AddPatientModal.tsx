@@ -73,7 +73,7 @@ export default function AddPatientModal({ onPatientCreated }: AddPatientModalPro
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="bg-accent text-[#08101d] hover:brightness-110 shadow-sm font-semibold">
+        <Button className="bg-[#2f6edb] text-white hover:bg-[#275fc1] shadow-sm font-semibold">
           <Plus className="w-4 h-4 mr-2" />
           Add Patient
         </Button>
@@ -145,7 +145,7 @@ export default function AddPatientModal({ onPatientCreated }: AddPatientModalPro
           <Button
             onClick={handleSubmit}
             disabled={submitting}
-            className="w-full bg-accent text-[#08101d] hover:brightness-110 shadow-md font-semibold text-sm mt-2 mb-2"
+            className="w-full bg-[#2f6edb] text-white hover:bg-[#275fc1] shadow-md font-semibold text-sm mt-2 mb-2"
           >
             {submitting ? (
               <>

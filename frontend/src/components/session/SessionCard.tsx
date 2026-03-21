@@ -196,25 +196,25 @@ const SessionCard = React.memo(function SessionCard({
   return (
     <Card
       ref={cardRef}
-      className={`group relative w-[98%] mx-auto bg-surface border border-border rounded-2xl border-l-[6px] ${getBorderColor(session)} transition-all hover:bg-surface-hover/70 hover:border-border-subtle shadow-[0_4px_14px_rgba(0,0,0,0.22)] ${isMoving ? 'opacity-60 ring-2 ring-accent ring-offset-2 ring-offset-bg queue-swap-flash' : ''}`}
+      className={`group relative w-full bg-surface border border-border-subtle rounded-2xl border-l-[6px] ${getBorderColor(session)} transition-all duration-300 hover:bg-surface-hover/40 hover:-translate-y-1 hover:shadow-xl ${isMoving ? 'opacity-60 ring-2 ring-accent ring-offset-2 ring-offset-bg queue-swap-flash' : 'shadow-sm'}`}
     >
       <CardContent className="p-0">
         <div className="flex w-full items-stretch min-h-20 overflow-hidden">
 
           {/* Queue Left Fixed Section */}
-          <div className="w-12 sm:w-16 flex flex-col items-center justify-center border-r border-border bg-surface-alt/25 py-0 shrink-0">
+          <div className="w-12 sm:w-16 flex flex-col items-center justify-center border-r border-border-subtle bg-surface-alt/30 py-0 shrink-0">
             <Button
               variant="ghost"
               size="icon"
               aria-label="Move up in queue"
-              className="h-7 w-7 text-text-muted hover:text-accent hover:bg-accent-glow disabled:opacity-20 disabled:hover:bg-transparent transition-colors rounded-md"
+              className="h-7 w-7 text-text-muted hover:text-accent hover:bg-accent/15 disabled:opacity-20 disabled:hover:bg-transparent transition-colors rounded-md"
               disabled={isFirst || isMoving}
               onClick={() => onMoveUp && onMoveUp(session._id)}
             >
               <ChevronUp className="w-4 h-4" />
             </Button>
 
-            <div className="text-text-muted font-bold text-2xl my-0.5 w-full text-center tabular-nums">
+            <div className="text-text-muted font-bold text-xl my-1 w-full text-center tabular-nums">
               {isMoving ? <Loader2 className="w-5 h-5 animate-spin mx-auto text-accent" /> : sequenceNumber}
             </div>
 
@@ -222,7 +222,7 @@ const SessionCard = React.memo(function SessionCard({
               variant="ghost"
               size="icon"
               aria-label="Move down in queue"
-              className="h-7 w-7 text-text-muted hover:text-accent hover:bg-accent-glow disabled:opacity-20 disabled:hover:bg-transparent transition-colors rounded-md"
+              className="h-7 w-7 text-text-muted hover:text-accent hover:bg-accent/15 disabled:opacity-20 disabled:hover:bg-transparent transition-colors rounded-md"
               disabled={isLast || isMoving}
               onClick={() => onMoveDown && onMoveDown(session._id)}
             >

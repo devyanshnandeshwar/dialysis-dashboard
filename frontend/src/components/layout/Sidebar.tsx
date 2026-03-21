@@ -20,7 +20,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
 
   return (
     <aside
-      className={`fixed left-0 top-0 h-screen bg-bg border-r border-border flex flex-col z-50 transition-all duration-300 ${collapsed ? 'w-17' : 'w-60'
+      className={`fixed left-0 top-0 h-screen bg-surface border-r border-border-subtle flex flex-col z-50 transition-all duration-300 shadow-[4px_0_24px_-12px_rgba(0,0,0,0.1)] ${collapsed ? 'w-17' : 'w-60'
         }`}
     >
       {/* Subtle top gradient */}
@@ -29,14 +29,14 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
         style={{ background: 'linear-gradient(to bottom, var(--color-surface-alt), transparent)' }}
       />
 
-      <div className={`py-6 flex items-center relative z-10 ${collapsed ? 'px-0 justify-center' : 'px-5'}`}>
+      <div className={`py-6 flex items-center relative z-10 ${collapsed ? 'px-0 justify-center' : 'px-6'}`}>
         {!collapsed ? (
-          <h1 className="text-lg tracking-tight whitespace-nowrap overflow-hidden">
+          <h1 className="text-xl tracking-tight whitespace-nowrap overflow-hidden">
             <span className="text-text-primary font-bold">Dialysis</span>
-            <span className="text-accent font-medium ml-1">Dashboard</span>
+            <span className="text-accent font-medium ml-1.5">Dashboard</span>
           </h1>
         ) : (
-          <div className="w-8 h-8 rounded-full border-2 border-accent flex items-center justify-center text-accent font-bold shrink-0">
+          <div className="w-10 h-10 rounded-xl border border-accent/30 bg-accent/10 flex items-center justify-center text-accent font-bold shrink-0 shadow-xs">
             D
           </div>
         )}
@@ -44,17 +44,17 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
 
       <Separator className="bg-border-subtle relative z-10" />
 
-      <nav className="flex-1 px-3 py-4 space-y-1 overflow-hidden relative z-10">
+      <nav className="flex-1 px-3 py-6 space-y-1.5 overflow-hidden relative z-10">
         {navItems.map(({ to, label, icon: Icon }) => (
           <NavLink
             key={to}
             to={to}
             title={collapsed ? label : undefined}
             className={({ isActive }) =>
-              `flex items-center gap-3 py-2.5 rounded-lg text-sm transition-colors ${collapsed ? 'px-0 justify-center' : 'px-3'
+              `flex items-center gap-3 py-2.5 rounded-xl text-sm transition-all duration-200 ${collapsed ? 'px-0 justify-center' : 'px-3.5'
               } ${isActive
-                ? 'bg-accent/25 text-text-primary border-l-2 border-accent font-medium'
-                : 'text-text-secondary hover:text-text-primary hover:bg-surface border-l-2 border-transparent'
+                ? 'bg-accent text-white shadow-md shadow-accent/20 font-medium translate-x-1'
+                : 'text-text-secondary hover:text-text-primary hover:bg-surface-hover hover:translate-x-1'
               }`
             }
           >

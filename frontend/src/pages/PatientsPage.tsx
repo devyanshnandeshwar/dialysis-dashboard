@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { getPatients } from '@/api/patients';
+import { useState } from 'react';
+import { usePatients } from '@/hooks/usePatients';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -10,8 +10,6 @@ import EditPatientModal from '@/components/patient/EditPatientModal';
 import PatientHistoryModal from '@/components/patient/PatientHistoryModal';
 import AnomalyBadge from '@/components/ui/AnomalyBadge';
 import StatusBadge from '@/components/ui/StatusBadge';
-import { toast } from 'sonner';
-import type { Patient } from '@/types';
 
 // Simple hash for gradient matching
 const gradients = [
@@ -35,43 +33,11 @@ function getTodayStatusLabel(status?: 'not_started' | 'in_progress' | 'completed
 }
 
 export default function PatientsPage() {
-  const [patients, setPatients] = useState<Patient[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { patients, loading, fetchPatients, updatePatient, addPatient } = usePatients();
+  
   const [search, setSearch] = useState('');
   const [diagnosisFilter, setDiagnosisFilter] = useState('all');
   const [highRiskOnly, setHighRiskOnly] = useState(false);
-
-  const fetchPatients = async () => {
-    try {
-      setLoading(true);
-      const data = await getPatients();
-      setPatients(data);
-    } catch {
-      toast.error('Failed to load patients');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchPatients();
-  }, []);
-
-  const handlePatientUpdated = (updated: Patient) => {
-    setPatients(prev => prev.map(p => p._id === updated._id ? { ...p, ...updated } : p));
-  };
-
-  const handlePatientCreated = (created: Patient) => {
-    // New patient won't have aggregated fields yet, provide defaults locally
-    const newPatient = {
-      ...created,
-      totalSessions: 0,
-      lastAnomalies: [],
-      lastSession: null,
-      todaySession: null,
-    };
-    setPatients(prev => [newPatient, ...prev]);
-  };
 
   const diagnosisOptions = Array.from(
     new Set(
@@ -106,9 +72,9 @@ export default function PatientsPage() {
           <p className="text-sm text-text-muted mt-1">
             {patients.length} total registered patient{patients.length !== 1 ? 's' : ''}
           </p>
-        </div>
-        <AddPatientModal onPatientCreated={handlePatientCreated} />
       </div>
+      <AddPatientModal onPatientCreated={addPatient} />
+    </div>
 
       {/* Filters */}
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
@@ -162,8 +128,8 @@ export default function PatientsPage() {
             const gradient = getGradientForName(patient.name);
 
             return (
-              <Card key={patient._id} className="group bg-surface border border-border transition-all hover:bg-surface-hover shadow-sm rounded-xl">
-                <CardContent className="p-2.5 flex flex-col md:flex-row md:items-center gap-3 md:gap-4">
+              <Card key={patient._id} className="group bg-surface border border-border-subtle transition-all duration-300 hover:bg-surface-hover/50 hover:shadow-lg hover:-translate-y-1 hover:border-accent/30 rounded-2xl overflow-hidden">
+                <CardContent className="p-4 md:p-5 flex flex-col md:flex-row md:items-center gap-4 md:gap-5">
 
                   {/* Main Info w/ Avatar */}
                   <div className="min-w-0 md:min-w-56 flex-1 flex items-center gap-3 md:gap-3.5">
@@ -174,7 +140,7 @@ export default function PatientsPage() {
                       <div className="flex items-center gap-2 flex-wrap">
                         <h3 className="text-base font-bold text-text-primary tracking-tight">{patient.name}</h3>
                         {patient.todaySession?.status && (
-                          <span className="text-[10px] px-2 py-0.5 rounded-full border border-border-subtle bg-surface-alt text-text-secondary font-semibold uppercase tracking-wide">
+                          <span className="text-[10px] px-2.5 py-1 rounded-md border border-accent/20 bg-accent/10 text-accent font-semibold flex items-center shadow-xs">
                             {getTodayStatusLabel(patient.todaySession.status)}
                           </span>
                         )}
@@ -202,8 +168,8 @@ export default function PatientsPage() {
                   </div>
 
                   {/* Last Session Box */}
-                  <div className="w-full md:w-52 min-h-20 bg-surface-alt/40 p-1.5 rounded-lg border border-border-subtle flex flex-col justify-center gap-1 shrink-0 shadow-inner">
-                    <div className="text-[10px] tracking-widest text-text-muted uppercase font-bold">LATEST SESSION</div>
+                  <div className="w-full md:w-56 min-h-24 bg-surface/50 p-3 rounded-xl border border-border-subtle flex flex-col justify-center gap-1.5 shrink-0 shadow-[inset_0_2px_4px_rgba(0,0,0,0.1)] group-hover:bg-bg/50 transition-colors">
+                    <div className="text-[10px] tracking-widest text-text-muted uppercase font-bold flex items-center gap-1.5">LATEST SESSION</div>
                     {patient.lastSession ? (
                       <div className="flex items-center gap-2.5">
                         <span className="text-sm font-semibold text-text-primary">
@@ -231,9 +197,9 @@ export default function PatientsPage() {
                   </div>
 
                   {/* Action Buttons */}
-                  <div className="flex flex-col gap-2 shrink-0 w-full md:w-40">
+                  <div className="flex flex-col gap-2 shrink-0 w-full md:w-40 pt-1 md:pt-0">
                     {patient.todaySession ? (
-                      <span className="h-9 w-full flex items-center justify-center text-[10px] px-2 py-1 rounded-full border border-success/40 bg-success-bg text-success font-semibold uppercase tracking-wide">
+                      <span className="h-9 w-full flex items-center justify-center text-xs px-3 rounded-md border border-success/30 bg-success/10 text-success font-medium tracking-wide shadow-xs">
                         Scheduled
                       </span>
                     ) : (
@@ -250,7 +216,7 @@ export default function PatientsPage() {
                         <PatientHistoryModal patient={patient} triggerClassName="w-full justify-center" />
                       </div>
                       <div className="opacity-80 hover:opacity-100 transition-opacity">
-                        <EditPatientModal patient={patient} onPatientUpdated={handlePatientUpdated} />
+                        <EditPatientModal patient={patient} onPatientUpdated={updatePatient} />
                       </div>
                     </div>
                   </div>

@@ -6,37 +6,37 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme {
-  --color-bg: #080c14;
-  --color-surface: #0e1420;
-  --color-surface-alt: #141928;
-  --color-surface-hover: #202943;
-  --color-border: #2b3757;
-  --color-border-subtle: #222d47;
-  --color-text-primary: #e8edf5;
-  --color-text-secondary: #aab6ca;
-  --color-text-muted: #7f8da7;
-  --color-accent: #6aa4ff;
-  --color-accent-glow: rgba(106, 164, 255, 0.2);
-  --color-warning: #f0a500;
-  --color-warning-bg: rgba(240, 165, 0, 0.1);
-  --color-critical: #f04f4f;
-  --color-critical-bg: rgba(240, 79, 79, 0.1);
-  --color-success: #22c97a;
-  --color-success-bg: rgba(34, 201, 122, 0.1);
+  --color-bg: #020617;
+  --color-surface: #0f172a;
+  --color-surface-alt: #1e293b;
+  --color-surface-hover: #334155;
+  --color-border: #334155;
+  --color-border-subtle: #1e293b;
+  --color-text-primary: #f8fafc;
+  --color-text-secondary: #cbd5e1;
+  --color-text-muted: #94a3b8;
+  --color-accent: #3b82f6;
+  --color-accent-glow: rgba(59, 130, 246, 0.25);
+  --color-warning: #eab308;
+  --color-warning-bg: rgba(234, 179, 8, 0.1);
+  --color-critical: #ef4444;
+  --color-critical-bg: rgba(239, 68, 68, 0.1);
+  --color-success: #10b981;
+  --color-success-bg: rgba(16, 185, 129, 0.1);
 }
 
 .light {
-  --color-bg: #f4f6fb;
+  --color-bg: #f8fafc;
   --color-surface: #ffffff;
-  --color-surface-alt: #f0f2f8;
-  --color-surface-hover: #e8ecf5;
-  --color-border: #e2e6f0;
-  --color-border-subtle: #edf0f7;
-  --color-text-primary: #0f1523;
-  --color-text-secondary: #4a5568;
-  --color-text-muted: #6b7280;
-  --color-accent: #3b7ef4;
-  --color-accent-glow: rgba(59, 126, 244, 0.12);
+  --color-surface-alt: #f1f5f9;
+  --color-surface-hover: #e2e8f0;
+  --color-border: #e2e8f0;
+  --color-border-subtle: #f1f5f9;
+  --color-text-primary: #0f172a;
+  --color-text-secondary: #475569;
+  --color-text-muted: #94a3b8;
+  --color-accent: #2563eb;
+  --color-accent-glow: rgba(37, 99, 235, 0.15);
   --color-warning: #d97706;
   --color-warning-bg: rgba(217, 119, 6, 0.08);
   --color-critical: #dc2626;
@@ -100,7 +100,7 @@ html {
   --border: oklch(0.205 0 0);
   --input: oklch(0.205 0 0);
   --ring: oklch(0.708 0 0);
-  --radius: 0.625rem;
+  --radius: 0.75rem;
 }
 
 @theme inline {

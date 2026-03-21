@@ -193,7 +193,7 @@ export default function AddSessionModal({
       <DialogTrigger asChild>
         <Button
           size="sm"
-          className={`bg-accent text-[#08101d] hover:brightness-110 shadow-sm font-semibold gap-1.5 ${triggerClassName}`}
+          className={`bg-accent text-white hover:brightness-110 shadow-sm font-semibold gap-1.5 ${triggerClassName}`}
         >
           <Plus className="w-4 h-4" />
           {triggerLabel}
@@ -367,7 +367,7 @@ export default function AddSessionModal({
           <Button
             onClick={handleSubmit}
             disabled={submitting || allMachinesInUse || !machineId}
-            className="w-full bg-accent text-[#08101d] hover:brightness-110 shadow-md font-semibold text-sm mt-4 mb-2"
+            className="w-full bg-accent text-white hover:brightness-110 shadow-md font-semibold text-sm mt-4 mb-2"
           >
             {submitting ? (
               <>
