@@ -26,14 +26,28 @@ cd ../frontend && npm run dev
 ## Architecture
 Frontend pages call Axios API modules, Express routes validate and delegate to controllers, controllers execute session rules and anomaly detection, and Mongoose persists data in MongoDB; this keeps UI concerns, request handling, business rules, and storage concerns separated.
 
-```text
-React (Vite) -> Axios API client -> Express routes -> Controllers
-                                            |
-                                            v
-                                 anomalyDetector + config
-                                            |
-                                            v
-                                  Mongoose models -> MongoDB
+```mermaid
+flowchart LR
+  subgraph FE[Frontend - React + Vite]
+    Pages[Pages and Components]
+    ApiClient[Axios API modules]
+    Pages --> ApiClient
+  end
+
+  subgraph BE[Backend - Express + TypeScript]
+    Routes[Routes + validation middleware]
+    Controllers[Controllers]
+    Detector[anomalyDetector + anomalyConfig]
+    Models[Mongoose models]
+    Routes --> Controllers
+    Controllers --> Detector
+    Controllers --> Models
+  end
+
+  DB[(MongoDB Atlas)]
+
+  ApiClient -->|HTTP JSON| Routes
+  Models --> DB
 ```
 
 Key decisions:
