@@ -68,6 +68,7 @@ export default function EditPatientModal({ patient, onPatientUpdated }: EditPati
         <Button
           size="sm"
           variant="ghost"
+          aria-label="Edit patient"
           className="h-8 w-8 p-0 border border-transparent text-text-muted/80 hover:text-accent hover:bg-accent-glow hover:border-accent/30 transition-all rounded-md"
         >
           <Pencil className="w-4 h-4" />

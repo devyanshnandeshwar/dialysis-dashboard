@@ -71,6 +71,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
             variant="ghost"
             size={collapsed ? 'icon' : 'sm'}
             onClick={toggleTheme}
+            aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
             title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
             className={`${collapsed ? '' : 'px-2'} text-text-muted hover:text-text-primary hover:bg-surface`}
           >
@@ -81,6 +82,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
             variant="ghost"
             size="icon"
             onClick={onToggle}
+            aria-label="Collapse sidebar"
             className="text-text-muted hover:text-text-primary hover:bg-surface"
           >
             {collapsed ? <PanelLeftOpen className="w-5 h-5" /> : <PanelLeftClose className="w-5 h-5" />}

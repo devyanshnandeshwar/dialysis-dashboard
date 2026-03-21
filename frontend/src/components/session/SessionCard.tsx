@@ -29,7 +29,7 @@ function VitalsDisplay({ session, isNotStarted }: VitalsDisplayProps) {
   return (
     <div className="hidden md:flex shrink-0 items-center px-3 border-l border-border-subtle gap-0.5">
       <div className="flex flex-col gap-1 w-30 text-center items-center">
-        <div className="flex items-center justify-center gap-1.5 text-[10px] text-text-muted font-bold tracking-widest uppercase">
+        <div className="flex items-center justify-center gap-1.5 text-[11px] text-text-secondary font-bold tracking-widest uppercase">
           <Weight className="w-3.5 h-3.5 text-text-muted opacity-80" /> WEIGHT
         </div>
         <div className="text-sm font-medium text-text-primary text-center">
@@ -44,7 +44,7 @@ function VitalsDisplay({ session, isNotStarted }: VitalsDisplayProps) {
       </div>
 
       <div className="flex flex-col gap-1 w-30 text-center items-center border-l border-border-subtle pl-3">
-        <div className="flex items-center justify-center gap-1.5 text-[10px] text-text-muted font-bold tracking-widest uppercase">
+        <div className="flex items-center justify-center gap-1.5 text-[11px] text-text-secondary font-bold tracking-widest uppercase">
           <HeartPulse className="w-3.5 h-3.5 text-text-muted opacity-80" /> BP
         </div>
         <div className="text-sm font-medium text-text-primary text-center">
@@ -61,7 +61,7 @@ function VitalsDisplay({ session, isNotStarted }: VitalsDisplayProps) {
       </div>
 
       <div className="flex flex-col gap-1 w-30 text-center items-center border-l border-border-subtle pl-3">
-        <div className="flex items-center justify-center gap-1.5 text-[10px] text-text-muted font-bold tracking-widest uppercase">
+        <div className="flex items-center justify-center gap-1.5 text-[11px] text-text-secondary font-bold tracking-widest uppercase">
           <Clock className="w-3.5 h-3.5 text-text-muted opacity-80" /> DURATION
         </div>
         <div className="text-sm font-medium text-text-primary text-center">
@@ -83,7 +83,7 @@ function AnomalyBadges({ anomalies }: AnomalyBadgesProps) {
         anomalies.map((anom, i) => (
           <div
             key={i}
-            className={`flex items-center gap-1.5 text-[10px] tracking-wide font-bold px-2.5 py-1 rounded-full border whitespace-nowrap w-full text-left truncate ${anom.severity === 'critical' ? 'bg-critical-bg text-critical border-critical/40' : 'bg-warning-bg text-warning border-warning/40'}`}
+            className={`flex items-center gap-1.5 text-[10px] tracking-wide font-bold px-2.5 py-1 rounded-full border whitespace-nowrap w-full text-left truncate ${anom.severity === 'critical' ? 'bg-critical-bg text-text-primary border-critical/40' : 'bg-warning-bg text-text-primary border-warning/40'}`}
             title={anom.message}
           >
             <AlertTriangle className="w-3 h-3 shrink-0" />
@@ -91,7 +91,7 @@ function AnomalyBadges({ anomalies }: AnomalyBadgesProps) {
           </div>
         ))
       ) : (
-        <div className="text-[11px] text-text-muted/50 uppercase tracking-widest font-semibold text-center w-full">NO ALERTS</div>
+        <div className="text-[11px] text-text-muted uppercase tracking-widest font-semibold text-center w-full">NO ALERTS</div>
       )}
     </div>
   );
@@ -133,21 +133,25 @@ const SessionCard = React.memo(function SessionCard({
   const prevTopRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (cardRef.current) {
-      const top = cardRef.current.getBoundingClientRect().top;
-      if (prevTopRef.current !== null && prevTopRef.current !== top) {
-        const deltaY = prevTopRef.current - top;
-        const el = cardRef.current;
-        el.style.transform = `translateY(${deltaY}px)`;
-        el.style.transition = 'transform 0s';
+    const rafId = requestAnimationFrame(() => {
+      if (cardRef.current) {
+        const top = cardRef.current.getBoundingClientRect().top;
+        if (prevTopRef.current !== null && prevTopRef.current !== top) {
+          const deltaY = prevTopRef.current - top;
+          const el = cardRef.current;
+          el.style.transform = `translateY(${deltaY}px)`;
+          el.style.transition = 'transform 0s';
 
-        requestAnimationFrame(() => {
-          el.style.transform = 'translateY(0)';
-          el.style.transition = 'transform 300ms cubic-bezier(0.4, 0, 0.2, 1)';
-        });
+          requestAnimationFrame(() => {
+            el.style.transform = 'translateY(0)';
+            el.style.transition = 'transform 300ms cubic-bezier(0.4, 0, 0.2, 1)';
+          });
+        }
+        prevTopRef.current = top;
       }
-      prevTopRef.current = top;
-    }
+    });
+
+    return () => cancelAnimationFrame(rafId);
   }, [sequenceNumber]); // Re-run when position changes
 
   const formatTime = (isoString?: string) => {
@@ -191,6 +195,7 @@ const SessionCard = React.memo(function SessionCard({
             <Button
               variant="ghost"
               size="icon"
+              aria-label="Move up in queue"
               className="h-7 w-7 text-text-muted hover:text-accent hover:bg-accent-glow disabled:opacity-20 disabled:hover:bg-transparent transition-colors rounded-md"
               disabled={isFirst || isMoving}
               onClick={() => onMoveUp && onMoveUp(session._id)}
@@ -205,6 +210,7 @@ const SessionCard = React.memo(function SessionCard({
             <Button
               variant="ghost"
               size="icon"
+              aria-label="Move down in queue"
               className="h-7 w-7 text-text-muted hover:text-accent hover:bg-accent-glow disabled:opacity-20 disabled:hover:bg-transparent transition-colors rounded-md"
               disabled={isLast || isMoving}
               onClick={() => onMoveDown && onMoveDown(session._id)}
@@ -217,9 +223,9 @@ const SessionCard = React.memo(function SessionCard({
           <div className="flex-1 flex flex-col justify-center p-4 min-w-[16rem] self-stretch">
             {/* Row 1: Name + Status */}
             <div className="flex items-center gap-2 sm:gap-3 min-w-0 pr-1 flex-nowrap">
-              <h3 className="flex-1 min-w-0 text-lg font-semibold text-text-primary truncate">
+              <p className="flex-1 min-w-0 text-lg font-semibold text-text-primary truncate">
                 {patientName}
-              </h3>
+              </p>
               <div className="shrink-0 whitespace-nowrap">
                 <StatusBadge status={session.status} />
               </div>
@@ -296,6 +302,7 @@ const SessionCard = React.memo(function SessionCard({
               <Button
                 variant="ghost"
                 size="icon"
+                aria-label="Expand session details"
                 className="h-8 w-8 text-text-muted hover:text-accent hover:bg-surface rounded-md border border-transparent hover:border-border transition-all"
                 onClick={() => setExpanded(!expanded)}
               >

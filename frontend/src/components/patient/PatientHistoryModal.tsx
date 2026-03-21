@@ -68,9 +68,10 @@ function SessionHistoryRow({ session }: { session: DialysisSession }) {
 
         {/* Col 5: Expansion Toggle */}
         <div className="flex justify-end">
-          <Button 
-            variant="ghost" 
-            size="icon" 
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Expand session details"
             onClick={() => setExpanded(!expanded)}
             className="text-text-muted hover:text-accent hover:bg-surface-hover w-8 h-8 shrink-0 rounded-md"
           >
@@ -84,7 +85,7 @@ function SessionHistoryRow({ session }: { session: DialysisSession }) {
         {session.anomalies.length > 0 ? (
           <div className="flex gap-2 flex-wrap">
             {session.anomalies.map((anom, i) => (
-              <div key={i} className={`text-[10px] tracking-wide font-bold px-2 py-0.5 rounded-full border ${anom.severity === 'critical' ? 'bg-critical-bg text-critical border-[rgba(240,79,79,0.3)]' : 'bg-warning-bg text-warning border-[rgba(240,165,0,0.3)]'}`} title={anom.message}>
+              <div key={i} className={`text-[10px] tracking-wide font-bold px-2 py-0.5 rounded-full border ${anom.severity === 'critical' ? 'bg-critical-bg text-text-primary border-[rgba(240,79,79,0.3)]' : 'bg-warning-bg text-text-primary border-[rgba(240,165,0,0.3)]'}`} title={anom.message}>
                 {anom.type.replace(/_/g, ' ')}
               </div>
             ))}

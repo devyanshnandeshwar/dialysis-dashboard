@@ -217,7 +217,7 @@ export default function PatientsPage() {
                       {patient.lastAnomalies && patient.lastAnomalies.length > 0 ? (
                         <>
                           {patient.lastAnomalies.slice(0, 2).map((anom, i) => (
-                            <div key={i} className={`flex items-center gap-1.5 text-[10px] tracking-wide font-bold px-2 py-0.5 rounded-full border whitespace-nowrap ${anom.severity === 'critical' ? 'bg-critical-bg text-critical border-critical/30' : 'bg-warning-bg text-warning border-warning/30'}`} title={anom.message}>
+                            <div key={i} className={`flex items-center gap-1.5 text-[10px] tracking-wide font-bold px-2 py-0.5 rounded-full border whitespace-nowrap ${anom.severity === 'critical' ? 'bg-critical-bg text-text-primary border-critical/30' : 'bg-warning-bg text-text-primary border-warning/30'}`} title={anom.message}>
                               <AlertTriangle className="w-3 h-3 shrink-0" />
                               <span className="truncate max-w-20">{anom.type.replace(/_/g, ' ')}</span>
                             </div>
