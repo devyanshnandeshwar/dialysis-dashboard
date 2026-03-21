@@ -116,7 +116,7 @@ export default function TodaySchedule() {
   const anomalyCount = summary.withAnomalies;
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6 pb-10">
+    <div className="max-w-7xl mx-auto space-y-6 pb-10">
       <div className={`sticky ${HEADER_OFFSET_CLASS} z-20 -mx-6 px-6 -mt-6 pt-6 pb-4 mb-6 backdrop-blur-sm bg-bg/90 border-b border-border-subtle space-y-4`}>
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -205,7 +205,7 @@ export default function TodaySchedule() {
           </p>
         </div>
       ) : (
-        <div className="space-y-3 flex flex-col relative w-full">
+        <div className="space-y-4 flex flex-col relative w-full">
           {filtered.map((session, index) => (
             <SessionCard
               key={session._id}
