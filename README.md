@@ -801,5 +801,162 @@ For questions or feature requests, open an issue or contact the development team
 
 ---
 
+## Verifying the Working Demo
+
+### 1. Quick Local Demo (5 minutes)
+
+```bash
+# Start backend
+cd backend
+npm run dev
+# Should see: Server running on http://localhost:5000
+
+# In another terminal, start frontend
+cd frontend
+npm run dev
+# Should see: VITE v8 ready in http://localhost:5173
+```
+
+Then open **http://localhost:5173** in your browser.
+
+### 2. Verify Key Workflows
+
+**Workflow 1: View Today's Schedule**
+- The dashboard loads with 6 seeded patients and their today's sessions
+- Filter tabs: All, Anomalies, Upcoming, In Progress, Completed
+- Cards show patient name, MRN, weight, BP, duration, anomaly badges
+
+**Workflow 2: Filter by Anomalies**
+- Click "Anomalies" tab
+- Should show only sessions with detected issues (e.g., Ananya Patel's high post-BP)
+- Anomaly badges display severity (🔴 critical or ⚠️ warning)
+
+**Workflow 3: Start a Session**
+- Click "Add Session" button on a patient card
+- Enter pre-weight, pre-BP, target duration
+- Submit → Session moves to "In Progress"
+- ⚠️ Note: Pre-weight is mandatory; form validates this
+
+**Workflow 4: Complete a Session**
+- Click "Complete Session" on an in-progress session
+- Enter post-weight, post-BP, notes
+- Submit → System detects anomalies and displays them
+
+**Workflow 5: Edit Notes (Live)**
+- Click notes icon on any session
+- Type clinical notes; auto-saves
+- Confirm changes appear in UI
+
+### 3. Run All Tests
+
+```bash
+# Backend tests (anomaly detection, API routes)
+cd backend
+npm test
+# Expected: 10/10 tests passing
+
+# Frontend tests (SessionCard component rendering)
+cd frontend
+npm test
+# Expected: 3/3 tests passing
+```
+
+### 4. Verify Database Seeding
+
+```bash
+cd backend
+npm run seed
+# You should see successful seed with 6 patients created
+# Check MongoDB Atlas > Collections > patients and sessions
+```
+
+---
+
+## AI Tools & Collaboration
+
+### What AI (GitHub Copilot) Was Used For
+
+1. **Boilerplate & Scaffolding** (30%)
+   - Express route stubs and Mongoose schema templates
+   - React functional component patterns (hooks, props)
+   - TypeScript type definitions for API contracts
+   - Tailwind CSS layout classes
+
+2. **Debugging & Error Handling** (20%)
+   - Identifying validation edge cases (pre-weight must be > 0)
+   - Suggesting try-catch patterns for MongoDB operations
+   - Helping structure consistent error responses
+
+3. **Testing** (15%)
+   - Generating Jest test cases for anomaly detection logic
+   - Vitest component test structure and assertions
+   - Mock data and test fixtures
+
+4. **Documentation** (15%)
+   - Initial README structure and sections
+   - API endpoint documentation examples
+   - Mermaid diagram syntax and structure
+
+5. **Code Organization** (20%)
+   - Suggesting logical file splits (controllers, models, routes)
+   - Recommending pure function patterns for anomaly detection
+   - Component hierarchy and reusability patterns
+
+### What Was Reviewed & Changed Manually
+
+1. **Clinical Logic** ✏️
+   - All anomaly thresholds reviewed against ESRD best practices
+   - Weight gain logic: validated that calculation is `pre_weight - dry_weight`
+   - Pre-weight validation: insisted on > 0 check before session start
+   - MRN normalization: split between schema and controller layers
+
+2. **Data Layer Design** ✏️
+   - Removed unused `assignedUnit` field completely (end-to-end cleanup)
+   - Added MRN immutability and duplicate checking
+   - Ensured Session references Patient via patientId
+   - Configured unique indexes on MRN
+
+3. **UI/UX Refinements** ✏️
+   - Anomaly badge placement and stacking (vertical layout)
+   - BP spacing reduction (BP arrow gap tightened from 1 to 0.5)
+   - Machine ID visibility on completed sessions
+   - Pre-weight display for not-started sessions
+   - Complete Session button width standardization
+
+4. **Component Refactoring** ✏️
+   - SessionCard component memoization for performance
+   - Separated concerns: VitalsDisplay, NotesEditor as sub-components
+   - Removed prop drilling via custom hooks
+   - Added proper loading/error state handling
+
+5. **Seed Data** ✏️
+   - Created diverse patient scenarios (anomalies, normal, pending, registered-only)
+   - Added pre-vitals for Farah Khan's not-started session
+   - Validated anomaly detection logic against seeded data
+
+### Example: Where I Disagreed with AI
+
+**Issue**: AI suggested a single `Vitals` component with many conditional props.
+
+**My Decision**: Split into smaller, focused components:
+- `VitalsDisplay` (read-only pre/post vitals)
+- `VitalsInput` (form for capturing vitals)
+- `AnomalyBadge` (separate anomaly rendering)
+
+**Why**: Clearer separation of concerns, easier to test, less prop drilling, more reusable. The AI's approach would have created component bloat.
+
+---
+
+## Submission Checklist Verification
+
+- ✅ **Git repository** with clean, atomic commit history (9 meaningful commits)
+- ✅ **README.md** with setup, architecture diagrams, assumptions, trade-offs, limitations
+- ✅ **Seed script** (`npm run seed`) with 6 patients and varied scenarios
+- ✅ **Tests** (10 backend Jest + 3 frontend Vitest = 13 tests passing)
+- ✅ **Working demo** verified locally (see "Verifying the Working Demo" section above)
+- ✅ **AI tools section** documenting usage, manual reviews, and disagreements
+
+---
+
 **Last Updated**: March 2026  
 **Status**: MVP (Minimum Viable Product) — Production-ready for pilot deployment
