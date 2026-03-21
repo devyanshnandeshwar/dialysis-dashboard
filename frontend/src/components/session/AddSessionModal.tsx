@@ -29,6 +29,7 @@ interface Props {
   preselectedPatientId?: string;
   lockPatient?: boolean;
   triggerLabel?: string;
+  triggerClassName?: string;
 }
 
 export default function AddSessionModal({
@@ -36,6 +37,7 @@ export default function AddSessionModal({
   preselectedPatientId,
   lockPatient = false,
   triggerLabel = 'Add Session',
+  triggerClassName = '',
 }: Props) {
   const todayIso = new Date().toISOString().split('T')[0]!;
 
@@ -191,7 +193,7 @@ export default function AddSessionModal({
       <DialogTrigger asChild>
         <Button
           size="sm"
-          className="bg-accent text-white hover:brightness-110 shadow-sm font-medium gap-1.5"
+          className={`bg-accent text-white hover:brightness-110 shadow-sm font-medium gap-1.5 ${triggerClassName}`}
         >
           <Plus className="w-4 h-4" />
           {triggerLabel}

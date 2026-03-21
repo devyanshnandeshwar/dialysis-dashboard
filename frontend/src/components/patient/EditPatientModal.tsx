@@ -28,7 +28,6 @@ export default function EditPatientModal({ patient, onPatientUpdated }: EditPati
     dryWeight: patient.dryWeight.toString(),
     dateOfBirth: patient.dateOfBirth ? new Date(patient.dateOfBirth).toISOString().split('T')[0] : '',
     primaryDiagnosis: patient.primaryDiagnosis || '',
-    assignedUnit: patient.assignedUnit || '',
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -48,7 +47,6 @@ export default function EditPatientModal({ patient, onPatientUpdated }: EditPati
         dryWeight: parseFloat(formData.dryWeight),
         dateOfBirth: formData.dateOfBirth || undefined,
         primaryDiagnosis: formData.primaryDiagnosis || undefined,
-        assignedUnit: formData.assignedUnit || undefined,
       });
 
       onPatientUpdated(updated);
@@ -132,17 +130,6 @@ export default function EditPatientModal({ patient, onPatientUpdated }: EditPati
               value={formData.primaryDiagnosis}
               onChange={handleChange}
               placeholder="e.g. Chronic Kidney Disease Stage 5"
-              className={fieldClass}
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <Label className="text-[10px] tracking-widest text-text-muted uppercase font-bold">Assigned Unit</Label>
-            <Input
-              name="assignedUnit"
-              value={formData.assignedUnit}
-              onChange={handleChange}
-              placeholder="e.g. Unit A"
               className={fieldClass}
             />
           </div>

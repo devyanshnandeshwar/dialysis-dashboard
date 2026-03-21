@@ -201,7 +201,7 @@ export default function PatientsPage() {
                   </div>
 
                   {/* Last Session Box */}
-                  <div className="min-w-50 bg-surface-alt/40 p-3 rounded-lg border border-border-subtle flex flex-col gap-2 shrink-0 shadow-inner">
+                  <div className="w-50 min-h-20 bg-surface-alt/40 p-3 rounded-lg border border-border-subtle flex flex-col justify-center gap-2 shrink-0 shadow-inner">
                     <div className="text-[10px] tracking-widest text-text-muted uppercase font-bold">LATEST SESSION</div>
                     {patient.lastSession ? (
                       <div className="flex items-center gap-2.5">
@@ -229,9 +229,9 @@ export default function PatientsPage() {
                   </div>
 
                   {/* Action Buttons */}
-                  <div className="flex md:flex-col gap-2 shrink-0 pt-3 md:pt-0 pl-1 mt-2 md:mt-0 justify-center items-center">
+                  <div className="flex md:flex-col gap-2 shrink-0 pt-3 md:pt-0 pl-1 mt-2 md:mt-0 justify-center items-center md:w-36">
                     {patient.todaySession ? (
-                      <span className="text-[10px] px-2 py-1 rounded-full border border-success/40 bg-success-bg text-success font-semibold uppercase tracking-wide">
+                      <span className="h-9 w-full flex items-center justify-center text-[10px] px-2 py-1 rounded-full border border-success/40 bg-success-bg text-success font-semibold uppercase tracking-wide">
                         Scheduled
                       </span>
                     ) : (
@@ -240,6 +240,7 @@ export default function PatientsPage() {
                         preselectedPatientId={patient._id}
                         lockPatient
                         triggerLabel="Schedule Today"
+                        triggerClassName="w-full justify-center"
                       />
                     )}
                     <div className="opacity-80 hover:opacity-100 transition-opacity">

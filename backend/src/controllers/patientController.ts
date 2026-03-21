@@ -12,16 +12,26 @@ export const createPatient = async (
   next: NextFunction
 ) => {
   try {
-    const { name, mrn, dryWeight, dateOfBirth, primaryDiagnosis, assignedUnit } =
+    const { name, mrn, dryWeight, dateOfBirth, primaryDiagnosis } =
       req.body;
+
+    const normalizedMrn = String(mrn || '')
+      .trim()
+      .replace(/^MRN[-_\s]*/i, '')
+      .toUpperCase();
+
+    const existingPatient = await Patient.findOne({ mrn: normalizedMrn });
+    if (existingPatient) {
+      res.status(409).json({ success: false, error: 'MRN already exists' });
+      return;
+    }
 
     const patient = await Patient.create({
       name,
-      mrn,
+      mrn: normalizedMrn,
       dryWeight,
       dateOfBirth,
       primaryDiagnosis,
-      assignedUnit,
     });
 
     res.status(201).json(patient);
@@ -143,7 +153,7 @@ export const updatePatient = async (
   try {
     delete req.body.mrn;
 
-    const { name, dryWeight, dateOfBirth, primaryDiagnosis, assignedUnit } =
+    const { name, dryWeight, dateOfBirth, primaryDiagnosis } =
       req.body;
 
     if (dryWeight !== undefined && (typeof dryWeight !== 'number' || dryWeight <= 0)) {
@@ -156,7 +166,6 @@ export const updatePatient = async (
     if (dryWeight !== undefined) update.dryWeight = dryWeight;
     if (dateOfBirth !== undefined) update.dateOfBirth = dateOfBirth;
     if (primaryDiagnosis !== undefined) update.primaryDiagnosis = primaryDiagnosis;
-    if (assignedUnit !== undefined) update.assignedUnit = assignedUnit;
 
     const patient = await Patient.findByIdAndUpdate(
       req.params.id,

@@ -15,7 +15,6 @@ export const seedDatabase = async () => {
     dryWeight: 72,
     dateOfBirth: new Date('1965-03-15'),
     primaryDiagnosis: 'End-Stage Renal Disease',
-    assignedUnit: 'Unit A',
   });
 
   const maria = await Patient.create({
@@ -24,7 +23,6 @@ export const seedDatabase = async () => {
     dryWeight: 65,
     dateOfBirth: new Date('1972-07-22'),
     primaryDiagnosis: 'Chronic Kidney Disease',
-    assignedUnit: 'Unit A',
   });
 
   const david = await Patient.create({
@@ -33,7 +31,6 @@ export const seedDatabase = async () => {
     dryWeight: 88,
     dateOfBirth: new Date('1958-11-08'),
     primaryDiagnosis: 'Diabetic Nephropathy',
-    assignedUnit: 'Unit B',
   });
 
   const priya = await Patient.create({
@@ -42,7 +39,6 @@ export const seedDatabase = async () => {
     dryWeight: 58,
     dateOfBirth: new Date('1980-01-30'),
     primaryDiagnosis: 'Hypertensive Nephropathy',
-    assignedUnit: 'Unit B',
   });
 
   const robert = await Patient.create({
@@ -51,7 +47,6 @@ export const seedDatabase = async () => {
     dryWeight: 79,
     dateOfBirth: new Date('1969-09-14'),
     primaryDiagnosis: 'Polycystic Kidney Disease',
-    assignedUnit: 'Unit C',
   });
 
   const today = new Date();

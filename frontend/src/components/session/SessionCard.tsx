@@ -224,7 +224,7 @@ const SessionCard = React.memo(function SessionCard({
           <div className="flex-1 flex flex-col justify-center p-3 sm:p-4 min-w-0 pb-3 self-stretch">
             {/* Row 1: Name + Status */}
             <div className="flex items-center gap-2 sm:gap-3 min-w-0 pr-1 flex-nowrap">
-              <h3 className="text-base font-semibold text-text-primary truncate">
+              <h3 className="flex-1 min-w-0 text-base font-semibold text-text-primary truncate">
                 {patientName}
               </h3>
               <div className="shrink-0 whitespace-nowrap">

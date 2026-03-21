@@ -6,7 +6,6 @@ export interface IPatient extends Document {
   dryWeight: number;
   dateOfBirth?: Date;
   primaryDiagnosis?: string;
-  assignedUnit?: string;
 }
 
 const PatientSchema = new Schema<IPatient>(
@@ -19,6 +18,11 @@ const PatientSchema = new Schema<IPatient>(
       type: String,
       required: true,
       unique: true,
+      set: (value: string) =>
+        String(value || '')
+          .trim()
+          .replace(/^MRN[-_\s]*/i, '')
+          .toUpperCase(),
     },
     dryWeight: {
       type: Number,
@@ -28,9 +32,6 @@ const PatientSchema = new Schema<IPatient>(
       type: Date,
     },
     primaryDiagnosis: {
-      type: String,
-    },
-    assignedUnit: {
       type: String,
     },
   },

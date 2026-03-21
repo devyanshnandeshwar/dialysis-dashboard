@@ -8,7 +8,7 @@ import { CalendarDays, AlertTriangle, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { DialysisSession, Patient, TodaySessionsSummary } from '@/types';
 
-type Filter = 'all' | 'anomalies' | 'in_progress';
+type FilterCategory = 'all' | 'anomalies' | 'upcoming' | 'in_progress' | 'completed';
 
 const HEADER_OFFSET_CLASS = 'top-0';
 const SKELETON_CARD_COUNT = 3;
@@ -31,7 +31,7 @@ export default function TodaySchedule() {
   const [sessions, setSessions] = useState<DialysisSession[]>([]);
   const [summary, setSummary] = useState<TodaySessionsSummary>(emptySummary);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<Filter>('all');
+  const [filter, setFilter] = useState<FilterCategory>('all');
   const [movingSessionId, setMovingSessionId] = useState<string | null>(null);
 
   const fetchSessions = useCallback(async () => {
@@ -102,9 +102,11 @@ export default function TodaySchedule() {
   }, []);
 
   const filtered = sessions.filter((s) => {
+    if (filter === 'all') return true;
     if (filter === 'anomalies') return s.anomalies.length > 0;
+    if (filter === 'upcoming') return s.status === 'not_started';
     if (filter === 'in_progress') return s.status === 'in_progress';
-    return true;
+    return s.status === 'completed';
   });
 
   const today = new Date().toLocaleDateString('en-US', {
@@ -133,10 +135,13 @@ export default function TodaySchedule() {
         {/* Stats Row */}
         <div className="flex flex-wrap gap-3">
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface border border-border text-xs font-medium text-text-primary shadow-sm">
-            <span className="text-text-muted">Total Today:</span> {summary.total}
+            <span className="text-text-muted">In Progress:</span> {summary.inProgress}
           </div>
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface border border-border text-xs font-medium text-text-primary shadow-sm">
-            <span className="text-text-muted">In Progress:</span> {summary.inProgress}
+            <span className="text-text-muted">Upcoming:</span> {summary.notStarted}
+          </div>
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface border border-border text-xs font-medium text-text-primary shadow-sm">
+            <span className="text-text-muted">Completed:</span> {summary.completed}
           </div>
           <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full shadow-sm text-xs font-medium ${anomalyCount > 0
             ? 'bg-critical-bg border border-critical text-critical'
@@ -151,8 +156,10 @@ export default function TodaySchedule() {
         <div className="flex gap-2">
           {([
             { key: 'all', label: 'All' },
-            { key: 'anomalies', label: 'Anomalies Only' },
+            { key: 'anomalies', label: 'Anomalies' },
+            { key: 'upcoming', label: 'Upcoming' },
             { key: 'in_progress', label: 'In Progress' },
+            { key: 'completed', label: 'Completed' },
           ] as const).map(({ key, label }) => (
             <Button
               key={key}

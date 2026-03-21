@@ -28,7 +28,6 @@ export default function AddPatientModal({ onPatientCreated }: AddPatientModalPro
     dryWeight: '',
     dateOfBirth: '',
     primaryDiagnosis: '',
-    assignedUnit: '',
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -49,7 +48,6 @@ export default function AddPatientModal({ onPatientCreated }: AddPatientModalPro
         dryWeight: parseFloat(formData.dryWeight),
         dateOfBirth: formData.dateOfBirth || undefined,
         primaryDiagnosis: formData.primaryDiagnosis || undefined,
-        assignedUnit: formData.assignedUnit || undefined,
       });
 
       onPatientCreated(newPatient);
@@ -61,7 +59,6 @@ export default function AddPatientModal({ onPatientCreated }: AddPatientModalPro
         dryWeight: '',
         dateOfBirth: '',
         primaryDiagnosis: '',
-        assignedUnit: '',
       });
     } catch {
       toast.error('Failed to register patient. MRN might already exist.');
@@ -141,17 +138,6 @@ export default function AddPatientModal({ onPatientCreated }: AddPatientModalPro
               value={formData.primaryDiagnosis}
               onChange={handleChange}
               placeholder="e.g. Chronic Kidney Disease Stage 5"
-              className={fieldClass}
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <Label className="text-[10px] tracking-widest text-text-muted uppercase font-bold">Assigned Unit</Label>
-            <Input
-              name="assignedUnit"
-              value={formData.assignedUnit}
-              onChange={handleChange}
-              placeholder="e.g. Unit A"
               className={fieldClass}
             />
           </div>

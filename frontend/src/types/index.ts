@@ -23,7 +23,6 @@ export interface Patient {
   dryWeight: number;
   dateOfBirth?: string;
   primaryDiagnosis?: string;
-  assignedUnit?: string;
   createdAt: string;
   updatedAt: string;
   totalSessions?: number;
