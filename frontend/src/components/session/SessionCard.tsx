@@ -27,8 +27,8 @@ interface VitalsDisplayProps {
 
 function VitalsDisplay({ session, isNotStarted }: VitalsDisplayProps) {
   return (
-    <div className="hidden lg:flex shrink-0 items-center px-6 border-l border-border-subtle">
-      <div className="flex flex-col gap-1 w-32 text-center items-center">
+    <div className="hidden md:flex shrink-0 items-center px-3 border-l border-border-subtle gap-0.5">
+      <div className="flex flex-col gap-1 w-30 text-center items-center">
         <div className="flex items-center justify-center gap-1.5 text-[10px] text-text-muted font-bold tracking-widest uppercase">
           <Weight className="w-3.5 h-3.5 text-text-muted opacity-80" /> WEIGHT
         </div>
@@ -41,7 +41,7 @@ function VitalsDisplay({ session, isNotStarted }: VitalsDisplayProps) {
         </div>
       </div>
 
-      <div className="flex flex-col gap-1 w-32 text-center items-center border-l border-border-subtle pl-4">
+      <div className="flex flex-col gap-1 w-30 text-center items-center border-l border-border-subtle pl-3">
         <div className="flex items-center justify-center gap-1.5 text-[10px] text-text-muted font-bold tracking-widest uppercase">
           <HeartPulse className="w-3.5 h-3.5 text-text-muted opacity-80" /> BP
         </div>
@@ -56,7 +56,7 @@ function VitalsDisplay({ session, isNotStarted }: VitalsDisplayProps) {
         </div>
       </div>
 
-      <div className="flex flex-col gap-1 w-32 text-center items-center border-l border-border-subtle pl-4">
+      <div className="flex flex-col gap-1 w-30 text-center items-center border-l border-border-subtle pl-3">
         <div className="flex items-center justify-center gap-1.5 text-[10px] text-text-muted font-bold tracking-widest uppercase">
           <Clock className="w-3.5 h-3.5 text-text-muted opacity-80" /> DURATION
         </div>
@@ -74,7 +74,7 @@ interface AnomalyBadgesProps {
 
 function AnomalyBadges({ anomalies }: AnomalyBadgesProps) {
   return (
-    <div className="hidden xl:flex shrink-0 w-48 items-center justify-center px-4 flex-col gap-2 border-l border-border-subtle">
+    <div className="hidden lg:flex shrink-0 w-40 items-center justify-center px-3 flex-col gap-2 border-l border-border-subtle">
       {anomalies.length > 0 ? (
         anomalies.map((anom, i) => (
           <div
@@ -87,7 +87,7 @@ function AnomalyBadges({ anomalies }: AnomalyBadgesProps) {
           </div>
         ))
       ) : (
-        <div className="text-[11px] text-text-muted/40 uppercase tracking-widest font-semibold text-center w-full">NO ALERTS</div>
+        <div className="text-[11px] text-text-muted/50 uppercase tracking-widest font-semibold text-center w-full">NO ALERTS</div>
       )}
     </div>
   );
@@ -180,18 +180,7 @@ const SessionCard = React.memo(function SessionCard({
       className={`group relative bg-surface border border-border rounded-xl border-l-[6px] ${getBorderColor(session)} transition-all hover:bg-surface-hover hover:border-border-subtle shadow-[0_1px_3px_rgba(0,0,0,0.4)] ${isMoving ? 'opacity-60 ring-2 ring-accent ring-offset-2 ring-offset-bg queue-swap-flash' : ''}`}
     >
       <CardContent className="p-0">
-        {onPatientUpdated && (
-          <div className="absolute right-2 top-2 z-20">
-            {patient ? (
-              <EditPatientModal
-                patient={patient}
-                onPatientUpdated={(updated) => onPatientUpdated(patient._id, updated)}
-              />
-            ) : null}
-          </div>
-        )}
-
-        <div className="flex w-full items-center min-h-24 overflow-hidden">
+        <div className="flex w-full items-stretch min-h-28 overflow-hidden">
 
           {/* Queue Left Fixed Section */}
           <div className="w-12 sm:w-16 flex flex-col items-center justify-center border-r border-border bg-surface-alt/10 py-2 shrink-0">
@@ -221,10 +210,10 @@ const SessionCard = React.memo(function SessionCard({
           </div>
 
           {/* Main Content Area */}
-          <div className="flex-1 flex flex-col justify-center p-3 sm:p-4 min-w-0 pb-3 self-stretch">
+          <div className="flex-1 flex flex-col justify-center p-4 min-w-[16rem] self-stretch">
             {/* Row 1: Name + Status */}
             <div className="flex items-center gap-2 sm:gap-3 min-w-0 pr-1 flex-nowrap">
-              <h3 className="flex-1 min-w-0 text-base font-semibold text-text-primary truncate">
+              <h3 className="flex-1 min-w-0 text-lg font-semibold text-text-primary truncate">
                 {patientName}
               </h3>
               <div className="shrink-0 whitespace-nowrap">
@@ -244,12 +233,14 @@ const SessionCard = React.memo(function SessionCard({
             </div>
 
             {/* Row 2: MRN + Reg Time */}
-            <div className="flex items-center gap-2 mt-2 text-[11px] text-text-muted tracking-wide uppercase font-medium">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-2 text-[11px] text-text-muted tracking-wide uppercase font-medium">
               <span className="text-text-secondary">
                 {patientMrn}
               </span>
               <span className="text-border-subtle">•</span>
               <span>Reg {formatTime(session.createdAt)}</span>
+              <span className="text-border-subtle">•</span>
+              <span>Dry Wt {patient?.dryWeight ?? '—'} kg</span>
             </div>
           </div>
 
@@ -257,14 +248,14 @@ const SessionCard = React.memo(function SessionCard({
           <AnomalyBadges anomalies={session.anomalies} />
 
           {/* Right Action Panel */}
-          <div className="shrink-0 w-28 sm:w-auto flex flex-col justify-between items-center px-2 sm:px-4 py-3 border-l border-border-subtle bg-surface-alt/40 rounded-r-xl">
+          <div className="shrink-0 w-32 sm:w-36 flex flex-col justify-between items-center px-2 sm:px-3 py-3 border-l border-border-subtle bg-surface-alt/40 rounded-r-xl">
             <div className="min-h-8 w-full flex items-center justify-center">
               {isNotStarted && (
                 <Button
                   size="sm"
                   onClick={handleStartSession}
                   disabled={starting}
-                  className="bg-surface border border-border text-text-primary hover:bg-surface-hover px-2 sm:px-3"
+                  className="bg-surface border border-border text-text-primary hover:bg-surface-hover px-2 sm:px-3 w-full"
                 >
                   {starting ? (
                     <>
@@ -291,14 +282,22 @@ const SessionCard = React.memo(function SessionCard({
                 </span>
               )}
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-text-muted hover:text-accent hover:bg-surface rounded-md border border-transparent hover:border-border transition-all"
-              onClick={() => setExpanded(!expanded)}
-            >
-              {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-            </Button>
+            <div className="flex items-center gap-1.5">
+              {onPatientUpdated && patient ? (
+                <EditPatientModal
+                  patient={patient}
+                  onPatientUpdated={(updated) => onPatientUpdated(patient._id, updated)}
+                />
+              ) : null}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-text-muted hover:text-accent hover:bg-surface rounded-md border border-transparent hover:border-border transition-all"
+                onClick={() => setExpanded(!expanded)}
+              >
+                {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              </Button>
+            </div>
           </div>
         </div>
 
