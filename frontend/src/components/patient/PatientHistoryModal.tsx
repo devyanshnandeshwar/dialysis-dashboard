@@ -14,6 +14,7 @@ import type { Patient, DialysisSession } from '@/types';
 
 interface PatientHistoryModalProps {
   patient: Patient;
+  triggerClassName?: string;
 }
 
 function SessionHistoryRow({ session }: { session: DialysisSession }) {
@@ -113,7 +114,7 @@ function SessionHistoryRow({ session }: { session: DialysisSession }) {
   );
 }
 
-export default function PatientHistoryModal({ patient }: PatientHistoryModalProps) {
+export default function PatientHistoryModal({ patient, triggerClassName }: PatientHistoryModalProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [sessions, setSessions] = useState<DialysisSession[]>([]);
@@ -154,7 +155,7 @@ export default function PatientHistoryModal({ patient }: PatientHistoryModalProp
         <Button
           size="sm"
           variant="ghost"
-          className="h-8 px-3 text-text-muted hover:text-accent hover:bg-surface-hover border border-transparent hover:border-border transition-all"
+          className={`h-8 px-3 text-text-muted hover:text-accent hover:bg-surface-hover border border-transparent hover:border-border transition-all ${triggerClassName ?? ''}`}
         >
           <History className="w-3.5 h-3.5 mr-1" /> History
         </Button>

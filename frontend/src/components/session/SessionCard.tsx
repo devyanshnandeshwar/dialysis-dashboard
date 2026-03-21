@@ -27,9 +27,9 @@ interface VitalsDisplayProps {
 
 function VitalsDisplay({ session, isNotStarted }: VitalsDisplayProps) {
   return (
-    <div className="hidden md:flex shrink-0 items-center px-3 border-l border-border-subtle gap-0.5">
-      <div className="flex flex-col gap-1 w-30 text-center items-center">
-        <div className="flex items-center justify-center gap-1.5 text-[11px] text-text-secondary font-bold tracking-widest uppercase">
+    <div className="hidden md:flex shrink-0 items-stretch px-3 xl:px-4 border-l border-border-subtle bg-surface-alt/20">
+      <div className="flex flex-col justify-center gap-1 w-28 px-3 text-center items-center">
+        <div className="flex items-center justify-center gap-1.5 text-[10px] text-text-secondary font-bold tracking-widest uppercase">
           <Weight className="w-3.5 h-3.5 text-text-muted opacity-80" /> WEIGHT
         </div>
         <div className="text-sm font-medium text-text-primary text-center">
@@ -43,8 +43,8 @@ function VitalsDisplay({ session, isNotStarted }: VitalsDisplayProps) {
         </div>
       </div>
 
-      <div className="flex flex-col gap-1 w-30 text-center items-center border-l border-border-subtle pl-3">
-        <div className="flex items-center justify-center gap-1.5 text-[11px] text-text-secondary font-bold tracking-widest uppercase">
+      <div className="flex flex-col justify-center gap-1 w-28 px-3 text-center items-center border-l border-border-subtle">
+        <div className="flex items-center justify-center gap-1.5 text-[10px] text-text-secondary font-bold tracking-widest uppercase">
           <HeartPulse className="w-3.5 h-3.5 text-text-muted opacity-80" /> BP
         </div>
         <div className="text-sm font-medium text-text-primary text-center">
@@ -60,8 +60,8 @@ function VitalsDisplay({ session, isNotStarted }: VitalsDisplayProps) {
         </div>
       </div>
 
-      <div className="flex flex-col gap-1 w-30 text-center items-center border-l border-border-subtle pl-3">
-        <div className="flex items-center justify-center gap-1.5 text-[11px] text-text-secondary font-bold tracking-widest uppercase">
+      <div className="flex flex-col justify-center gap-1 w-28 px-3 text-center items-center border-l border-border-subtle">
+        <div className="flex items-center justify-center gap-1.5 text-[10px] text-text-secondary font-bold tracking-widest uppercase">
           <Clock className="w-3.5 h-3.5 text-text-muted opacity-80" /> DURATION
         </div>
         <div className="text-sm font-medium text-text-primary text-center">
@@ -76,18 +76,29 @@ interface AnomalyBadgesProps {
   anomalies: DialysisSession['anomalies'];
 }
 
+function formatAnomalyLabel(type: string) {
+  const labels: Record<string, string> = {
+    excess_weight_gain: 'Weight Gain',
+    high_post_bp: 'High BP',
+    short_session: 'Short Session',
+    long_session: 'Long Session',
+  };
+
+  return labels[type] || type.replace(/_/g, ' ');
+}
+
 function AnomalyBadges({ anomalies }: AnomalyBadgesProps) {
   return (
-    <div className="hidden lg:flex shrink-0 w-40 items-center justify-center px-3 flex-col gap-2 border-l border-border-subtle">
+    <div className="hidden lg:flex shrink-0 w-44 items-center justify-center px-3 py-2 flex-col gap-2 border-l border-border-subtle bg-surface-alt/10">
       {anomalies.length > 0 ? (
         anomalies.map((anom, i) => (
           <div
             key={i}
-            className={`flex items-center gap-1.5 text-[10px] tracking-wide font-bold px-2.5 py-1 rounded-full border whitespace-nowrap w-full text-left truncate ${anom.severity === 'critical' ? 'bg-critical-bg text-text-primary border-critical/40' : 'bg-warning-bg text-text-primary border-warning/40'}`}
+            className={`flex items-center gap-1.5 text-[10px] tracking-wide font-semibold px-2.5 py-1 rounded-full border whitespace-nowrap w-full text-left truncate transition-colors ${anom.severity === 'critical' ? 'bg-critical-bg text-critical border-critical/45' : 'bg-warning-bg text-warning border-warning/45'}`}
             title={anom.message}
           >
-            <AlertTriangle className="w-3 h-3 shrink-0" />
-            <span className="truncate">{anom.type.replace(/_/g, ' ')}</span>
+            <AlertTriangle className="w-3 h-3 shrink-0 opacity-90" />
+            <span className="truncate">{formatAnomalyLabel(anom.type)}</span>
           </div>
         ))
       ) : (
@@ -185,13 +196,13 @@ const SessionCard = React.memo(function SessionCard({
   return (
     <Card
       ref={cardRef}
-      className={`group relative bg-surface border border-border rounded-xl border-l-[6px] ${getBorderColor(session)} transition-all hover:bg-surface-hover hover:border-border-subtle shadow-[0_1px_3px_rgba(0,0,0,0.4)] ${isMoving ? 'opacity-60 ring-2 ring-accent ring-offset-2 ring-offset-bg queue-swap-flash' : ''}`}
+      className={`group relative bg-surface border border-border rounded-2xl border-l-[6px] ${getBorderColor(session)} transition-all hover:bg-surface-hover/70 hover:border-border-subtle shadow-[0_4px_14px_rgba(0,0,0,0.22)] ${isMoving ? 'opacity-60 ring-2 ring-accent ring-offset-2 ring-offset-bg queue-swap-flash' : ''}`}
     >
       <CardContent className="p-0">
-        <div className="flex w-full items-stretch min-h-28 overflow-hidden">
+        <div className="flex w-full items-stretch min-h-30 overflow-hidden">
 
           {/* Queue Left Fixed Section */}
-          <div className="w-12 sm:w-16 flex flex-col items-center justify-center border-r border-border bg-surface-alt/10 py-2 shrink-0">
+          <div className="w-12 sm:w-16 flex flex-col items-center justify-center border-r border-border bg-surface-alt/25 py-2 shrink-0">
             <Button
               variant="ghost"
               size="icon"
@@ -220,10 +231,10 @@ const SessionCard = React.memo(function SessionCard({
           </div>
 
           {/* Main Content Area */}
-          <div className="flex-1 flex flex-col justify-center p-4 min-w-[16rem] self-stretch">
+          <div className="w-[18rem] lg:w-[19rem] xl:w-[20rem] shrink-0 flex flex-col justify-center p-4 self-stretch">
             {/* Row 1: Name + Status */}
-            <div className="flex items-center gap-2 sm:gap-3 min-w-0 pr-1 flex-nowrap">
-              <p className="flex-1 min-w-0 text-lg font-semibold text-text-primary truncate">
+            <div className="flex items-center gap-2 min-w-0 pr-1 flex-nowrap">
+              <p className="min-w-0 max-w-[11rem] lg:max-w-[12rem] text-lg font-semibold text-text-primary truncate">
                 {patientName}
               </p>
               <div className="shrink-0 whitespace-nowrap">
@@ -258,8 +269,8 @@ const SessionCard = React.memo(function SessionCard({
           <AnomalyBadges anomalies={session.anomalies} />
 
           {/* Right Action Panel */}
-          <div className="shrink-0 w-32 sm:w-36 flex flex-col justify-between items-center px-2 sm:px-3 py-2.5 border-l border-border-subtle bg-surface-alt/40 rounded-r-xl">
-            <div className="min-h-9 w-full flex items-center justify-center">
+          <div className="shrink-0 w-36 xl:w-40 flex flex-col justify-center items-center gap-2.5 px-2.5 py-3 border-l border-border-subtle bg-surface-alt/45 rounded-r-2xl">
+            <div className="min-h-10 w-full flex items-center justify-center px-2">
               {isNotStarted && (
                 <Button
                   size="sm"
@@ -286,13 +297,13 @@ const SessionCard = React.memo(function SessionCard({
               )}
 
               {isCompleted && (
-                <span className="text-[10px] sm:text-[11px] uppercase tracking-wide text-text-secondary font-semibold text-center">
+                <span className="text-[10px] uppercase tracking-wide text-text-secondary font-semibold text-center leading-tight">
                   <span className="hidden sm:inline">Completed {formatTime(session.updatedAt)}</span>
                   <span className="sm:hidden">Done {formatTime(session.updatedAt)}</span>
                 </span>
               )}
             </div>
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-2 w-full justify-center pb-0.5">
               {onPatientUpdated && patient ? (
                 <EditPatientModal
                   patient={patient}

@@ -15,6 +15,9 @@ const severityConfig = {
 
 export default function AnomalyBadge({ anomaly }: { anomaly: Anomaly }) {
   const { className, Icon } = severityConfig[anomaly.severity];
+  const anomalyClassName = anomaly.type === 'long_session'
+    ? 'bg-accent-glow text-accent border-accent/40 hover:bg-accent-glow'
+    : className;
 
   const typeLabels: Record<string, string> = {
     excess_weight_gain: 'Weight Gain',
@@ -24,7 +27,7 @@ export default function AnomalyBadge({ anomaly }: { anomaly: Anomaly }) {
   };
 
   return (
-    <Badge variant="outline" className={`text-xs font-medium gap-1 ${className}`}>
+    <Badge variant="outline" className={`text-xs font-medium gap-1 ${anomalyClassName}`}>
       <Icon className="w-3 h-3" />
       {typeLabels[anomaly.type] || anomaly.type}
     </Badge>

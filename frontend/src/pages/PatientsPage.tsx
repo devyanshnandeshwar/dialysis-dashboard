@@ -3,11 +3,12 @@ import { getPatients } from '@/api/patients';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Users, Search, Loader2, AlertTriangle } from 'lucide-react';
+import { Users, Search, Loader2 } from 'lucide-react';
 import AddPatientModal from '@/components/patient/AddPatientModal';
 import AddSessionModal from '@/components/session/AddSessionModal';
 import EditPatientModal from '@/components/patient/EditPatientModal';
 import PatientHistoryModal from '@/components/patient/PatientHistoryModal';
+import AnomalyBadge from '@/components/ui/AnomalyBadge';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { toast } from 'sonner';
 import type { Patient } from '@/types';
@@ -162,10 +163,10 @@ export default function PatientsPage() {
 
             return (
               <Card key={patient._id} className="group bg-surface border border-border transition-all hover:bg-surface-hover shadow-sm rounded-xl">
-                <CardContent className="p-4 flex flex-col md:flex-row md:items-center gap-5">
+                <CardContent className="p-4 flex flex-col md:flex-row md:items-center gap-4 md:gap-5">
 
                   {/* Main Info w/ Avatar */}
-                  <div className="min-w-60 flex-1 flex items-center gap-4">
+                  <div className="min-w-0 md:min-w-56 flex-1 flex items-center gap-3.5 md:gap-4">
                     <div className={`w-12 h-12 rounded-full shrink-0 flex items-center justify-center text-white font-bold text-lg shadow-inner bg-linear-to-br ${gradient}`}>
                       {initial}
                     </div>
@@ -183,7 +184,7 @@ export default function PatientsPage() {
                   </div>
 
                   {/* Patient Stats Columns */}
-                  <div className="flex gap-8 lg:gap-12 text-sm flex-wrap items-center flex-1 border-l border-border-subtle pl-6 py-1">
+                  <div className="flex gap-5 lg:gap-7 text-sm flex-wrap items-center flex-1 border-l border-border-subtle pl-4 md:pl-5 py-1">
                     <div className="flex flex-col gap-1">
                       <span className="text-[10px] tracking-widest text-text-muted uppercase font-bold">DRY WEIGHT</span>
                       <span className="font-medium text-text-primary">{patient.dryWeight} kg</span>
@@ -201,7 +202,7 @@ export default function PatientsPage() {
                   </div>
 
                   {/* Last Session Box */}
-                  <div className="w-52 min-h-24 bg-surface-alt/40 p-3 rounded-lg border border-border-subtle flex flex-col justify-center gap-2 shrink-0 shadow-inner">
+                  <div className="w-full md:w-52 min-h-24 bg-surface-alt/40 p-3 rounded-lg border border-border-subtle flex flex-col justify-center gap-2 shrink-0 shadow-inner">
                     <div className="text-[10px] tracking-widest text-text-muted uppercase font-bold">LATEST SESSION</div>
                     {patient.lastSession ? (
                       <div className="flex items-center gap-2.5">
@@ -213,27 +214,24 @@ export default function PatientsPage() {
                     ) : (
                       <span className="text-xs text-text-muted italic opacity-80">No sessions recorded</span>
                     )}
-                    <div className="flex flex-col items-start gap-1 mt-1 min-h-5">
+                    <div className="flex flex-wrap items-start gap-1.5 mt-1 min-h-5">
                       {patient.lastAnomalies && patient.lastAnomalies.length > 0 ? (
                         <>
                           {patient.lastAnomalies.slice(0, 2).map((anom, i) => (
-                            <div key={i} className={`flex items-center gap-1.5 text-[10px] tracking-wide font-bold px-2 py-0.5 rounded-full border whitespace-nowrap ${anom.severity === 'critical' ? 'bg-critical-bg text-text-primary border-critical/30' : 'bg-warning-bg text-text-primary border-warning/30'}`} title={anom.message}>
-                              <AlertTriangle className="w-3 h-3 shrink-0" />
-                              <span className="truncate max-w-20">{anom.type.replace(/_/g, ' ')}</span>
-                            </div>
+                            <AnomalyBadge key={i} anomaly={anom} />
                           ))}
                           {patient.lastAnomalies.length > 2 && (
-                            <span className="text-[10px] text-text-muted font-bold">+{patient.lastAnomalies.length - 2}</span>
+                            <span className="text-[10px] text-text-secondary font-semibold">+{patient.lastAnomalies.length - 2}</span>
                           )}
                         </>
                       ) : (
-                        <span className="text-[10px] text-text-muted/60 uppercase tracking-wide">No alerts</span>
+                        <span className="text-[10px] text-text-muted uppercase tracking-wide">No alerts</span>
                       )}
                     </div>
                   </div>
 
                   {/* Action Buttons */}
-                  <div className="flex md:flex-col gap-2 shrink-0 pt-3 md:pt-0 pl-1 mt-2 md:mt-0 justify-center items-center md:w-36">
+                  <div className="flex flex-col gap-2 shrink-0 w-full md:w-40 pt-2 md:pt-0 mt-1 md:mt-0">
                     {patient.todaySession ? (
                       <span className="h-9 w-full flex items-center justify-center text-[10px] px-2 py-1 rounded-full border border-success/40 bg-success-bg text-success font-semibold uppercase tracking-wide">
                         Scheduled
@@ -247,11 +245,13 @@ export default function PatientsPage() {
                         triggerClassName="w-full justify-center"
                       />
                     )}
-                    <div className="opacity-80 hover:opacity-100 transition-opacity">
-                      <PatientHistoryModal patient={patient} />
-                    </div>
-                    <div className="opacity-80 hover:opacity-100 transition-opacity mt-1">
-                      <EditPatientModal patient={patient} onPatientUpdated={handlePatientUpdated} />
+                    <div className="flex items-center gap-2">
+                      <div className="opacity-80 hover:opacity-100 transition-opacity flex-1">
+                        <PatientHistoryModal patient={patient} triggerClassName="w-full justify-center" />
+                      </div>
+                      <div className="opacity-80 hover:opacity-100 transition-opacity">
+                        <EditPatientModal patient={patient} onPatientUpdated={handlePatientUpdated} />
+                      </div>
                     </div>
                   </div>
                 </CardContent>
