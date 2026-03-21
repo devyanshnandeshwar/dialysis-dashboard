@@ -163,10 +163,10 @@ export default function PatientsPage() {
 
             return (
               <Card key={patient._id} className="group bg-surface border border-border transition-all hover:bg-surface-hover shadow-sm rounded-xl">
-                <CardContent className="p-4 flex flex-col md:flex-row md:items-center gap-4 md:gap-5">
+                <CardContent className="p-2.5 flex flex-col md:flex-row md:items-center gap-3 md:gap-4">
 
                   {/* Main Info w/ Avatar */}
-                  <div className="min-w-0 md:min-w-56 flex-1 flex items-center gap-3.5 md:gap-4">
+                  <div className="min-w-0 md:min-w-56 flex-1 flex items-center gap-3 md:gap-3.5">
                     <div className={`w-12 h-12 rounded-full shrink-0 flex items-center justify-center text-white font-bold text-lg shadow-inner bg-linear-to-br ${gradient}`}>
                       {initial}
                     </div>
@@ -184,7 +184,7 @@ export default function PatientsPage() {
                   </div>
 
                   {/* Patient Stats Columns */}
-                  <div className="flex gap-5 lg:gap-7 text-sm flex-wrap items-center flex-1 border-l border-border-subtle pl-4 md:pl-5 py-1">
+                  <div className="flex gap-4 lg:gap-6 text-sm flex-wrap items-center flex-1 border-l border-border-subtle pl-3.5 md:pl-4 py-1">
                     <div className="flex flex-col gap-1">
                       <span className="text-[10px] tracking-widest text-text-muted uppercase font-bold">DRY WEIGHT</span>
                       <span className="font-medium text-text-primary">{patient.dryWeight} kg</span>
@@ -202,7 +202,7 @@ export default function PatientsPage() {
                   </div>
 
                   {/* Last Session Box */}
-                  <div className="w-full md:w-52 min-h-24 bg-surface-alt/40 p-3 rounded-lg border border-border-subtle flex flex-col justify-center gap-2 shrink-0 shadow-inner">
+                  <div className="w-full md:w-52 min-h-20 bg-surface-alt/40 p-1.5 rounded-lg border border-border-subtle flex flex-col justify-center gap-1 shrink-0 shadow-inner">
                     <div className="text-[10px] tracking-widest text-text-muted uppercase font-bold">LATEST SESSION</div>
                     {patient.lastSession ? (
                       <div className="flex items-center gap-2.5">
@@ -231,7 +231,7 @@ export default function PatientsPage() {
                   </div>
 
                   {/* Action Buttons */}
-                  <div className="flex flex-col gap-2 shrink-0 w-full md:w-40 pt-2 md:pt-0 mt-1 md:mt-0">
+                  <div className="flex flex-col gap-2 shrink-0 w-full md:w-40">
                     {patient.todaySession ? (
                       <span className="h-9 w-full flex items-center justify-center text-[10px] px-2 py-1 rounded-full border border-success/40 bg-success-bg text-success font-semibold uppercase tracking-wide">
                         Scheduled

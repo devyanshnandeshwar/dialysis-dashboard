@@ -28,7 +28,7 @@ interface VitalsDisplayProps {
 function VitalsDisplay({ session, isNotStarted }: VitalsDisplayProps) {
   return (
     <div className="hidden md:flex shrink-0 items-stretch px-3 xl:px-4 border-l border-border-subtle bg-surface-alt/20">
-      <div className="flex flex-col justify-center gap-1 w-28 px-3 text-center items-center">
+      <div className="flex flex-col justify-center gap-1 w-25 pl-1.5 pr-1.5 text-center items-center">
         <div className="flex items-center justify-center gap-1.5 text-[10px] text-text-secondary font-bold tracking-widest uppercase">
           <Weight className="w-3.5 h-3.5 text-text-muted opacity-80" /> WEIGHT
         </div>
@@ -43,7 +43,7 @@ function VitalsDisplay({ session, isNotStarted }: VitalsDisplayProps) {
         </div>
       </div>
 
-      <div className="flex flex-col justify-center gap-1 w-28 px-3 text-center items-center border-l border-border-subtle">
+      <div className="flex flex-col justify-center gap-1 w-36 pl-1.5 pr-1.5 text-center items-center border-l border-border-subtle">
         <div className="flex items-center justify-center gap-1.5 text-[10px] text-text-secondary font-bold tracking-widest uppercase">
           <HeartPulse className="w-3.5 h-3.5 text-text-muted opacity-80" /> BP
         </div>
@@ -60,7 +60,7 @@ function VitalsDisplay({ session, isNotStarted }: VitalsDisplayProps) {
         </div>
       </div>
 
-      <div className="flex flex-col justify-center gap-1 w-28 px-3 text-center items-center border-l border-border-subtle">
+      <div className="flex flex-col justify-center gap-1 w-28 pl-1.5 pr-1.5 text-center items-center border-l border-border-subtle">
         <div className="flex items-center justify-center gap-1.5 text-[10px] text-text-secondary font-bold tracking-widest uppercase">
           <Clock className="w-3.5 h-3.5 text-text-muted opacity-80" /> DURATION
         </div>
@@ -196,13 +196,13 @@ const SessionCard = React.memo(function SessionCard({
   return (
     <Card
       ref={cardRef}
-      className={`group relative bg-surface border border-border rounded-2xl border-l-[6px] ${getBorderColor(session)} transition-all hover:bg-surface-hover/70 hover:border-border-subtle shadow-[0_4px_14px_rgba(0,0,0,0.22)] ${isMoving ? 'opacity-60 ring-2 ring-accent ring-offset-2 ring-offset-bg queue-swap-flash' : ''}`}
+      className={`group relative w-[98%] mx-auto bg-surface border border-border rounded-2xl border-l-[6px] ${getBorderColor(session)} transition-all hover:bg-surface-hover/70 hover:border-border-subtle shadow-[0_4px_14px_rgba(0,0,0,0.22)] ${isMoving ? 'opacity-60 ring-2 ring-accent ring-offset-2 ring-offset-bg queue-swap-flash' : ''}`}
     >
       <CardContent className="p-0">
-        <div className="flex w-full items-stretch min-h-30 overflow-hidden">
+        <div className="flex w-full items-stretch min-h-20 overflow-hidden">
 
           {/* Queue Left Fixed Section */}
-          <div className="w-12 sm:w-16 flex flex-col items-center justify-center border-r border-border bg-surface-alt/25 py-2 shrink-0">
+          <div className="w-12 sm:w-16 flex flex-col items-center justify-center border-r border-border bg-surface-alt/25 py-0 shrink-0">
             <Button
               variant="ghost"
               size="icon"
@@ -231,10 +231,10 @@ const SessionCard = React.memo(function SessionCard({
           </div>
 
           {/* Main Content Area */}
-          <div className="w-[18rem] lg:w-[19rem] xl:w-[20rem] shrink-0 flex flex-col justify-center p-4 self-stretch">
+          <div className="flex-1 min-w-[18rem] lg:min-w-76 xl:min-w-[20rem] flex flex-col justify-center px-4 py-2 self-stretch">
             {/* Row 1: Name + Status */}
             <div className="flex items-center gap-2 min-w-0 pr-1 flex-nowrap">
-              <p className="min-w-0 max-w-[11rem] lg:max-w-[12rem] text-lg font-semibold text-text-primary truncate">
+              <p className="min-w-0 max-w-44 lg:max-w-48 text-lg font-semibold text-text-primary truncate">
                 {patientName}
               </p>
               <div className="shrink-0 whitespace-nowrap">
@@ -269,8 +269,8 @@ const SessionCard = React.memo(function SessionCard({
           <AnomalyBadges anomalies={session.anomalies} />
 
           {/* Right Action Panel */}
-          <div className="shrink-0 w-36 xl:w-40 flex flex-col justify-center items-center gap-2.5 px-2.5 py-3 border-l border-border-subtle bg-surface-alt/45 rounded-r-2xl">
-            <div className="min-h-10 w-full flex items-center justify-center px-2">
+          <div className="shrink-0 w-40 xl:w-44 mt-0.5 mb-0.5 ml-2 mr-4 flex flex-col justify-center items-center gap-2 px-2.5 py-2 border border-border-subtle bg-surface-alt/45 rounded-xl">
+            <div className="h-10 w-full flex items-center justify-center px-2">
               {isNotStarted && (
                 <Button
                   size="sm"
@@ -303,7 +303,7 @@ const SessionCard = React.memo(function SessionCard({
                 </span>
               )}
             </div>
-            <div className="flex items-center gap-2 w-full justify-center pb-0.5">
+            <div className="flex items-center gap-2 w-full justify-center">
               {onPatientUpdated && patient ? (
                 <EditPatientModal
                   patient={patient}
