@@ -213,7 +213,7 @@ export default function PatientsPage() {
                     ) : (
                       <span className="text-xs text-text-muted italic opacity-80">No sessions recorded</span>
                     )}
-                    <div className="flex items-center gap-2 mt-1 min-h-5">
+                    <div className="flex flex-col items-start gap-1 mt-1 min-h-5">
                       {patient.lastAnomalies && patient.lastAnomalies.length > 0 ? (
                         <>
                           {patient.lastAnomalies.slice(0, 2).map((anom, i) => (
