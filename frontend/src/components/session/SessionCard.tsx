@@ -33,9 +33,11 @@ function VitalsDisplay({ session, isNotStarted }: VitalsDisplayProps) {
           <Weight className="w-3.5 h-3.5 text-text-muted opacity-80" /> WEIGHT
         </div>
         <div className="text-sm font-medium text-text-primary text-center">
-          {isNotStarted ? '—' : (
-            <span className="flex items-center justify-center gap-1">
-              {session.preWeight ?? '—'} <span className="text-text-muted text-xs mx-0.5">→</span> {session.postWeight ?? '—'}
+          {isNotStarted ? (
+            <span>{session.preWeight ?? '—'}</span>
+          ) : (
+            <span className="flex items-center justify-center gap-0.5">
+              {session.preWeight ?? '—'} <span className="text-text-muted text-xs">→</span> {session.postWeight ?? '—'}
             </span>
           )}
         </div>
@@ -46,10 +48,12 @@ function VitalsDisplay({ session, isNotStarted }: VitalsDisplayProps) {
           <HeartPulse className="w-3.5 h-3.5 text-text-muted opacity-80" /> BP
         </div>
         <div className="text-sm font-medium text-text-primary text-center">
-          {isNotStarted ? '—' : (
-            <span className="flex items-center justify-center gap-1">
+          {isNotStarted ? (
+            <span>{session.preBloodPressure ? `${session.preBloodPressure.systolic}/${session.preBloodPressure.diastolic}` : '—'}</span>
+          ) : (
+            <span className="flex items-center justify-center gap-0.5">
               {session.preBloodPressure ? `${session.preBloodPressure.systolic}/${session.preBloodPressure.diastolic}` : '—'}
-              <span className="text-text-muted text-xs mx-0.5">→</span>
+              <span className="text-text-muted text-xs">→</span>
               {session.postBloodPressure ? `${session.postBloodPressure.systolic}/${session.postBloodPressure.diastolic}` : '—'}
             </span>
           )}
@@ -219,28 +223,28 @@ const SessionCard = React.memo(function SessionCard({
               <div className="shrink-0 whitespace-nowrap">
                 <StatusBadge status={session.status} />
               </div>
-              {session.machineId && !isCompleted && (
+            </div>
+
+            {/* Row 2: MRN + Machine + Reg Time */}
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-2 text-[11px] text-text-muted tracking-wide uppercase font-medium">
+              <span className="text-text-secondary">
+                {patientMrn}
+              </span>
+              {session.machineId && (
                 <span
-                  className={`inline-flex items-center gap-1 text-[11px] font-mono font-semibold px-2 py-0.5 rounded ml-auto shrink-0 border tracking-wide whitespace-nowrap ${isInProgress
+                  className={`inline-flex items-center gap-1 text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded shrink-0 border tracking-wide whitespace-nowrap ${isInProgress
                     ? 'bg-accent-glow text-accent border-border'
-                    : 'bg-surface-alt text-text-secondary border-border-subtle'
+                    : isCompleted
+                      ? 'bg-success-bg text-success border-success/40'
+                      : 'bg-surface-alt text-text-secondary border-border-subtle'
                     }`}
                 >
                   <Cpu className="w-3 h-3" />
                   {session.machineId}
                 </span>
               )}
-            </div>
-
-            {/* Row 2: MRN + Reg Time */}
-            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-2 text-[11px] text-text-muted tracking-wide uppercase font-medium">
-              <span className="text-text-secondary">
-                {patientMrn}
-              </span>
               <span className="text-border-subtle">•</span>
               <span>Reg {formatTime(session.createdAt)}</span>
-              <span className="text-border-subtle">•</span>
-              <span>Dry Wt {patient?.dryWeight ?? '—'} kg</span>
             </div>
           </div>
 
@@ -248,8 +252,8 @@ const SessionCard = React.memo(function SessionCard({
           <AnomalyBadges anomalies={session.anomalies} />
 
           {/* Right Action Panel */}
-          <div className="shrink-0 w-32 sm:w-36 flex flex-col justify-between items-center px-2 sm:px-3 py-3 border-l border-border-subtle bg-surface-alt/40 rounded-r-xl">
-            <div className="min-h-8 w-full flex items-center justify-center">
+          <div className="shrink-0 w-32 sm:w-36 flex flex-col justify-between items-center px-2 sm:px-3 py-2.5 border-l border-border-subtle bg-surface-alt/40 rounded-r-xl">
+            <div className="min-h-9 w-full flex items-center justify-center">
               {isNotStarted && (
                 <Button
                   size="sm"
