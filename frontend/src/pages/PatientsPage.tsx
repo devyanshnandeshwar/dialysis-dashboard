@@ -201,7 +201,7 @@ export default function PatientsPage() {
                   </div>
 
                   {/* Last Session Box */}
-                  <div className="w-50 min-h-20 bg-surface-alt/40 p-3 rounded-lg border border-border-subtle flex flex-col justify-center gap-2 shrink-0 shadow-inner">
+                  <div className="w-52 min-h-24 bg-surface-alt/40 p-3 rounded-lg border border-border-subtle flex flex-col justify-center gap-2 shrink-0 shadow-inner">
                     <div className="text-[10px] tracking-widest text-text-muted uppercase font-bold">LATEST SESSION</div>
                     {patient.lastSession ? (
                       <div className="flex items-center gap-2.5">
@@ -213,19 +213,23 @@ export default function PatientsPage() {
                     ) : (
                       <span className="text-xs text-text-muted italic opacity-80">No sessions recorded</span>
                     )}
-                    {patient.lastAnomalies && patient.lastAnomalies.length > 0 && (
-                      <div className="flex items-center gap-2 mt-1">
-                        {patient.lastAnomalies.slice(0, 2).map((anom, i) => (
-                          <div key={i} className={`flex items-center gap-1.5 text-[10px] tracking-wide font-bold px-2 py-0.5 rounded-full border whitespace-nowrap ${anom.severity === 'critical' ? 'bg-critical-bg text-critical border-critical/30' : 'bg-warning-bg text-warning border-warning/30'}`} title={anom.message}>
-                            <AlertTriangle className="w-3 h-3 shrink-0" />
-                            <span className="truncate max-w-20">{anom.type.replace(/_/g, ' ')}</span>
-                          </div>
-                        ))}
-                        {patient.lastAnomalies.length > 2 && (
-                          <span className="text-[10px] text-text-muted font-bold">+{patient.lastAnomalies.length - 2}</span>
-                        )}
-                      </div>
-                    )}
+                    <div className="flex items-center gap-2 mt-1 min-h-5">
+                      {patient.lastAnomalies && patient.lastAnomalies.length > 0 ? (
+                        <>
+                          {patient.lastAnomalies.slice(0, 2).map((anom, i) => (
+                            <div key={i} className={`flex items-center gap-1.5 text-[10px] tracking-wide font-bold px-2 py-0.5 rounded-full border whitespace-nowrap ${anom.severity === 'critical' ? 'bg-critical-bg text-critical border-critical/30' : 'bg-warning-bg text-warning border-warning/30'}`} title={anom.message}>
+                              <AlertTriangle className="w-3 h-3 shrink-0" />
+                              <span className="truncate max-w-20">{anom.type.replace(/_/g, ' ')}</span>
+                            </div>
+                          ))}
+                          {patient.lastAnomalies.length > 2 && (
+                            <span className="text-[10px] text-text-muted font-bold">+{patient.lastAnomalies.length - 2}</span>
+                          )}
+                        </>
+                      ) : (
+                        <span className="text-[10px] text-text-muted/60 uppercase tracking-wide">No alerts</span>
+                      )}
+                    </div>
                   </div>
 
                   {/* Action Buttons */}
