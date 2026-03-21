@@ -116,6 +116,8 @@ export const seedDatabase = async () => {
     status: 'not_started',
     machineId: 'HD-03',
     queuePosition: 3,
+    preWeight: 59.2,
+    preBloodPressure: { systolic: 134, diastolic: 84 },
     postWeight: null,
     postBloodPressure: null,
     sessionDurationMinutes: null,
