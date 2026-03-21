@@ -143,6 +143,13 @@ export const updateSession = async (
       return;
     }
 
+    if (req.body.status === 'in_progress' && (session.preWeight == null || session.preWeight <= 0)) {
+      res.status(400).json({
+        error: 'Cannot start session — pre-session weight is required',
+      });
+      return;
+    }
+
     session.status = req.body.status;
     await session.save();
 
