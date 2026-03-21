@@ -1,671 +1,174 @@
-# Dialysis Dashboard — Session Intake & Anomaly Detection
-
-A full-stack clinical dashboard for managing dialysis sessions, patient intake, and automated anomaly detection. Designed to streamline nursing workflows, capture critical patient vitals, and surface potentially unsafe clinical situations such as excessive weight gain and elevated post-dialysis blood pressure.
-
-**Stack**: TypeScript + Express + React (Vite) + MongoDB
-
----
+# Dialysis Dashboard
+Dialysis center intake dashboard for registering patients, recording dialysis sessions, and flagging session-level anomalies for nursing review.
+Stack: TypeScript · Express · React (Vite) · MongoDB Atlas
 
 ## Quick Start
-
-**Prerequisites**: Node 18+, MongoDB Atlas URI (or local MongoDB)
+- Prerequisites: Node.js 18+, npm, MongoDB Atlas URI
+- Create `backend/.env` with `MONGO_URI=<your_connection_string>`
 
 ```bash
-# 1. Clone & install dependencies
 git clone <repository-url>
 cd dialysis-dashboard
 
-# 2. Backend setup
-cd backend
-npm install
-cp .env.example .env
-# Edit .env and set MONGO_URI to your MongoDB connection string
+# install
+cd backend && npm install
+cd ../frontend && npm install
+cd ..
 
-# 3. Seed the database with example patients & sessions
-npm run seed
+# seed sample data
+cd backend && npm run seed
+cd ..
 
-# 4. Start backend dev server (runs on http://localhost:5000)
-npm run dev
+# run both servers
+# Terminal 1 (backend)
+cd backend && npm run dev
 
-# 5. In a new terminal, start frontend
-cd ../frontend
-npm install
-npm run dev
-# Frontend runs on http://localhost:5173
+# Terminal 2 (frontend)
+cd frontend && npm run dev
 ```
 
-### Available Scripts
-
-**Backend:**
-```bash
-npm run build      # TypeScript compilation
-npm run dev        # Start Express server with nodemon (auto-reload)
-npm run seed       # Populate MongoDB with 6 test patients and varied session scenarios
-npm test           # Run Jest unit tests (anomaly detection, API routes)
-```
-
-**Frontend:**
-```bash
-npm run dev        # Start Vite dev server
-npm run build      # Build for production (dist/)
-npm test           # Run Vitest unit tests (components, hooks)
-npm run lint       # ESLint + TypeScript checks
-```
+| Area | Script | Purpose |
+|---|---|---|
+| backend | `npm run dev` | Start API with nodemon |
+| backend | `npm run build` | Compile TypeScript |
+| backend | `npm run seed` | Seed MongoDB sample patients/sessions |
+| backend | `npm test` | Run Jest tests |
+| frontend | `npm run dev` | Start Vite dev server |
+| frontend | `npm run build` | Build frontend bundle |
+| frontend | `npm run test` | Run Vitest tests |
+| frontend | `npm run lint` | Run ESLint |
 
 ## Architecture
+The frontend calls a thin API client layer that talks to Express routes; controllers validate input, apply session rules and anomaly detection, then persist/retrieve records through Mongoose models in MongoDB.
 
-### System Architecture Diagram
-
-```mermaid
-graph TB
-    subgraph UI["🖥️ Frontend (React + Vite)"]
-        A1["PatientsPage.tsx"]
-        A2["TodaySchedule.tsx"]
-        A3["SessionCard.tsx"]
-        API["Axios HTTP Client<br/>api/patients.ts<br/>api/sessions.ts"]
-    end
-    
-    subgraph Server["🔧 Backend (Express + TypeScript)"]
-        Routes["Routes<br/>/patients<br/>/sessions<br/>/queue"]
-        Controllers["Controllers<br/>patientController<br/>sessionController"]
-        Anomaly["Anomaly Detection<br/>anomalyDetector.ts<br/>anomalyConfig.ts"]
-        Models["Mongoose Models<br/>Patient<br/>DialysisSession"]
-    end
-    
-    subgraph DB["💾 Data Layer"]
-        Mongo["MongoDB Atlas<br/>Collections:<br/>patients<br/>sessions"]
-    end
-    
-    A1 --> API
-    A2 --> API
-    A3 --> API
-    API --> Routes
-    Routes --> Controllers
-    Controllers --> Anomaly
-    Anomaly --> Models
-    Models --> Mongo
-    
-    style UI fill:#e1f5ff
-    style Server fill:#f3e5f5
-    style DB fill:#e8f5e9
+```text
+React (Vite) -> Axios API client -> Express routes -> Controllers
+                                            |
+                                            v
+                                 anomalyDetector + config
+                                            |
+                                            v
+                                  Mongoose models -> MongoDB
 ```
 
-**Request Flow**: React component → Axios HTTP client → Express route → Controller → Anomaly detector → Mongoose model → MongoDB. Anomalies computed server-side, included in API response.
+Session lifecycle (plain text):
+- `not_started` -> `in_progress` when pre-session data is recorded and session begins
+- `in_progress` -> `completed` when post-session data and duration are submitted
+- `not_started` sessions remain scheduled until started or replaced by rescheduling workflow
 
----
+## API Reference
+### Patients
+- `GET /api/patients` - List patients with latest session context.
+- `GET /api/patients/:id` - Get one patient and recent sessions.
+- `POST /api/patients` - Register a patient. Body: `name, mrn, dryWeight, dateOfBirth?, primaryDiagnosis?`.
+- `PATCH /api/patients/:id` - Update patient details (MRN not editable). Body: `name?, dryWeight?, dateOfBirth?, primaryDiagnosis?`.
 
-### Session Lifecycle State Diagram
+### Sessions
+- `GET /api/sessions` - List sessions with pagination/filter support.
+- `GET /api/sessions/today` - Return today schedule with anomalies included.
+- `GET /api/sessions/:id` - Get one session.
+- `POST /api/sessions` - Create session. Body: `patientId, machineId, scheduledDate, targetDurationMinutes, preWeight, preBloodPressure{systolic,diastolic}, status`.
+- `PATCH /api/sessions/:id` - Start/update status to in-progress. Body: `status` (`in_progress`).
+- `PATCH /api/sessions/:id/complete` - Complete session and compute anomalies. Body: `postWeight, postBloodPressure{systolic,diastolic}, sessionDurationMinutes, nurseNotes?`.
+- `PATCH /api/sessions/:id/notes` - Update nurse notes. Body: `nurseNotes`.
 
-```mermaid
-stateDiagram-v2
-    [*] --> pending: Patient registered
-    
-    pending --> not_started: Added to today's schedule
-    pending --> registered_only: No session scheduled<br/>for today
-    
-    not_started --> in_progress: Nurse records<br/>pre-weight & vitals
-    not_started --> cancelled: Session cancelled
-    
-    in_progress --> completed: Nurse records<br/>post-weight & vitals
-    in_progress --> cancelled: Session interrupted
-    
-    completed --> [*]: Session archived
-    cancelled --> [*]: Logged & reviewed
-    registered_only --> [*]
-    
-    note right of not_started
-        ⚠️ Cannot start without<br/>pre-weight > 0
-    end note
-    
-    note right of completed
-        ✅ Anomalies calculated<br/>& flagged if any
-    end note
-```
-
----
-
-### Anomaly Detection Logic
-
-```mermaid
-graph TD
-    A["Session Completed<br/>with vitals"] --> B{Calculate<br/>Weight Gain}
-    
-    B -->|gain ≥ 3.0 kg| C["🔴 Critical:<br/>Excess Weight Gain"]
-    B -->|2.0 ≤ gain < 3.0| D["⚠️ Warning:<br/>Excess Weight Gain"]
-    B -->|gain < 2.0| E["✅ Normal<br/>Weight Gain"]
-    
-    A --> F{Check Post<br/>Systolic BP}
-    F -->|BP ≥ 160 mmHg| G["🔴 Critical:<br/>High Post-BP"]
-    F -->|BP < 160 mmHg| H["✅ Normal<br/>Blood Pressure"]
-    
-    A --> I{Calculate<br/>Duration}
-    I -->|duration < target - 30| J["⚠️ Warning:<br/>Short Session"]
-    I -->|duration > target + 60| K["⚠️ Warning:<br/>Long Session"]
-    I -->|target ± 30| L["✅ Normal<br/>Duration"]
-    
-    C --> M["Anomalies Array<br/>sent to UI"]
-    D --> M
-    G --> M
-    J --> M
-    K --> M
-    
-    style M fill:#fff9c4
-    style C fill:#ffcdd2
-    style D fill:#ffe0b2
-    style G fill:#ffcdd2
-    style J fill:#ffe0b2
-    style K fill:#ffe0b2
-```
-
----
-
-## API Documentation
-
-### Base URL
-```
-http://localhost:5000
-```
-
-### Endpoints
-
-#### **Patients**
-
-**GET /api/patients**
-- Fetch all patients with their latest session data
-- Query params: `?filter=name|mrn|diagnosis|high_risk`
-- Response includes:
-  ```json
-  {
-    "_id": "...",
-    "mrn": "1001",
-    "name": "Ananya Patel",
-    "dateOfBirth": "1965-03-20",
-    "primaryDiagnosis": "Chronic Kidney Disease Stage 5",
-    "dryWeight": 58.0,
-    "latestSession": {
-      "sessionId": "...",
-      "date": "2026-03-21",
-      "preWeight": 60.2,
-      "postWeight": 57.5,
-      "preBP": "138/82",
-      "postBP": "156/88",
-      "duration": 180,
-      "isCompleted": true,
-      "anomalies": [
-        { "type": "high_post_bp", "severity": "critical" }
-      ]
-    },
-    "allAnomalies": [ /* array of all anomaly types */ ]
-  }
-  ```
-
-**POST /api/patients**
-- Register a new patient
-- Body:
-  ```json
-  {
-    "mrn": "1007",
-    "name": "Jane Doe",
-    "dateOfBirth": "1970-05-15",
-    "primaryDiagnosis": "ESRD on HD",
-    "dryWeight": 65.0
-  }
-  ```
-
-**PUT /api/patients/:id**
-- Update patient demographics or dry weight
-- Body: Any of the above fields (except mrn, which is immutable)
-
----
-
-#### **Sessions**
-
-**GET /api/sessions/today**
-- Fetch today's scheduled sessions for all patients, grouped by status
-- Response:
-  ```json
-  {
-    "inProgress": [ /* SessionCard data */ ],
-    "upcoming": [ /* SessionCard data */ ],
-    "completed": [ /* SessionCard data */ ],
-    "summary": {
-      "inProgress": 1,
-      "upcoming": 3,
-      "completed": 2,
-      "anomalies": 4
-    }
-  }
-  ```
-
-**POST /api/sessions**
-- Create a new session for a patient
-- Body:
-  ```json
-  {
-    "patientId": "...",
-    "preWeight": 60.2,
-    "preHeartRate": 72,
-    "targetDuration": 180,
-    "machineId": "M-01"
-  }
-  ```
-
-**PATCH /api/sessions/:id**
-- Update an in-progress session (add post vitals, complete the session)
-- Body:
-  ```json
-  {
-    "postWeight": 57.5,
-    "postBP": "156/88",
-    "postHeartRate": 75,
-    "duration": 185,
-    "notes": "Patient tolerated well",
-    "isCompleted": true
-  }
-  ```
-
-**PATCH /api/sessions/:id/notes**
-- Update session notes (live edit during session)
-- Body:
-  ```json
-  {
-    "notes": "Patient feeling better after fluid removal"
-  }
-  ```
-
----
-
-#### **Queue Management**
-
-**PATCH /api/queue/reorder**
-- Reorder the session queue (drag-and-drop support)
-- Body:
-  ```json
-  {
-    "reorderedIds": ["sessionId1", "sessionId2", "sessionId3"]
-  }
-  ```
-
----
-
-### Status Codes
-- `200 OK` — Successful request
-- `201 Created` — Resource created successfully
-- `400 Bad Request` — Validation error (e.g., missing preWeight, duplicate MRN)
-- `404 Not Found` — Patient/session not found
-- `500 Internal Server Error` — Server-side issue
-
----
-
-## Nurse Workflow
-
-```mermaid
-sequenceDiagram
-    participant Nurse
-    participant UI as UI<br/>TodaySchedule
-    participant API as Backend API
-    participant DB as MongoDB
-    
-    Nurse->>UI: 1. Load Today's Schedule
-    UI->>API: GET /api/sessions/today
-    API->>DB: Query sessions for date
-    API->>API: Detect anomalies
-    API-->>UI: Return sessions with anomalies
-    UI-->>Nurse: Display sessions (In Progress,<br/>Upcoming, Completed)
-    
-    rect rgb(200, 220, 255)
-    Note over Nurse,DB: Filter by anomalies
-    Nurse->>UI: 2. Click "Anomalies" filter
-    UI-->>Nurse: Show only sessions<br/>with alerts
-    end
-    
-    rect rgb(255, 240, 200)
-    Note over Nurse,DB: Start a session
-    Nurse->>UI: 3. Click "Start Session"
-    UI->>API: POST /api/sessions
-    API->>API: Validate pre-weight > 0
-    API->>DB: Create new session
-    API-->>UI: Return session object
-    UI-->>Nurse: Show session in<br/>"In Progress"
-    end
-    
-    rect rgb(240, 255, 240)
-    Note over Nurse,DB: Nurse edits notes during session
-    Nurse->>UI: 4. Click notes icon
-    UI->>API: PATCH /api/sessions/notes
-    API->>DB: Update notes
-    API-->>UI: Confirm save
-    UI-->>Nurse: Notes saved ✓
-    end
-    
-    rect rgb(255, 240, 240)
-    Note over Nurse,DB: Complete session
-    Nurse->>UI: 5. Click "Complete Session"
-    UI->>API: PATCH /api/sessions/:id<br/>(with post vitals)
-    API->>API: Calculate anomalies
-    API->>DB: Update session status<br/>+ anomalies
-    API-->>UI: Return completed session
-    UI-->>Nurse: Show anomaly badges<br/>(if any)
-    end
-```
-
----
+### Queue
+- `PATCH /api/sessions/:id/queue` - Update queue ordering metadata. Body: `queuePosition` (and reorder payload handled by controller logic).
 
 ## Clinical Assumptions & Trade-offs
-
-All thresholds and rules are **configurable** in [`backend/src/config/anomalyConfig.ts`](backend/src/config/anomalyConfig.ts). No magic numbers are scattered in business logic.
-
 ### Weight Gain (Interdialytic)
 | Category | Threshold | Severity | Rationale |
-|----------|-----------|----------|-----------|
-| Excess weight gain | ≥ 2.0 kg | ⚠️ Warning | Standard ESRD guideline; typical target is 3–5% of dry weight between sessions |
-| Critical weight gain | ≥ 3.0 kg | 🔴 Critical | 1.5× the warning threshold; signals high risk of pulmonary edema or cardiovascular stress |
-
-**Logic**: `weight_gain = pre_weight − dry_weight`. Calculated automatically when a session starts.
-
----
+|---|---|---|---|
+| Excess weight gain | >= 2.0 kg | Warning | Common dialysis monitoring threshold for fluid overload risk |
+| Critical weight gain | >= 3.0 kg | Critical | Elevated risk; needs immediate clinical attention |
 
 ### Blood Pressure (Post-Dialysis)
 | Category | Threshold | Severity | Rationale |
-|----------|-----------|----------|-----------|
-| High post-dialysis systolic BP | ≥ 160 mmHg | 🔴 Critical | Conservative threshold to flag potential hypertensive episodes post-treatment |
-
-**Assumption**: Post-dialysis BP ≥160 indicates inadequate fluid removal or rebound hypertension. Threshold is adjustable per patient cohort.
-
----
+|---|---|---|---|
+| High post-dialysis systolic BP | >= 160 mmHg | Critical | Conservative threshold to surface hypertensive post-dialysis risk |
 
 ### Session Duration
 | Category | Threshold | Severity | Rationale |
-|----------|-----------|----------|-----------|
-| Short session | > 30 min below target | ⚠️ Warning | May indicate inadequate solute clearance |
-| Long session | > 60 min above target | ⚠️ Warning | May cause dialysis-related symptoms or patient fatigue |
+|---|---|---|---|
+| Short session | > 30 min below target | Warning | May indicate under-dialysis |
+| Long session | > 60 min above target | Warning | May reflect treatment or workflow variance needing review |
 
-**Example**: If target duration is 180 min, then <150 min is short, >240 min is long.
+- MRN auto-assigned sequentially, immutable after creation.
+- Machine required before session can be created.
+- Duplicate session per patient per day not allowed.
+- Sessions scheduled max 30 days in advance.
 
----
-
-### Additional Trade-offs
-
-**MRN Immutability**
-- Once a patient is registered, their MRN cannot be changed.
-- **Reason**: Ensures record integrity and prevents duplicate medical histories.
-
-**Queue Management**
-- Default: FIFO (first-in, first-out) by registration order.
-- Nurses can manually reorder via drag-and-drop for clinical priority.
-- **Reason**: Balances automation with clinical flexibility.
-
-**Pre-Session Weight Requirement**
-- A session **cannot start** without recording pre-weight.
-- **Reason**: Weight gain is the most critical real-time anomaly detector.
-
-**Anomaly Scoring**
-- Anomalies are **independent**; one session can have multiple anomalies.
-- Example: A patient might have excess weight gain *and* high post-BP.
-- **Reason**: Real-world scenarios often involve multiple risk factors.
-
----
-
-## Tests
-
-The project includes comprehensive unit and component tests. Run all tests:
-
-```bash
-# Backend tests
-cd backend
-npm test
-
-# Frontend tests
-cd ../frontend
-npm test
-```
-
-### Backend Tests (Jest)
-
-**Location**: `backend/src/__tests__/`
-
-1. **Anomaly Detection Logic** (`anomalyDetector.test.ts`)
-   - Tests pure `detectAnomalies()` function with various vitals combinations
-   - Examples:
-     - ✅ No anomalies when all vitals normal
-     - ✅ Detects `high_post_bp` when postBP ≥ 160 mmHg
-     - ✅ Detects `excess_weight_gain` when gain ≥ 2.0 kg
-     - ✅ Detects `short_session` when duration < target − 30 min
-
-2. **Session Route** (`routes/__tests__/sessions.test.ts`)
-   - Tests `/api/sessions` POST and PATCH endpoints
-   - Examples:
-     - ✅ Cannot start session without preWeight
-     - ✅ Returns 400 if preWeight is 0 or negative
-     - ✅ Correctly calculates anomalies on session completion
-     - ✅ Returns structured response with anomaly array
-
-**Coverage**: 10/10 tests passing (business logic + API contract)
-
----
-
-### Frontend Tests (Vitest)
-
-**Location**: `frontend/src/components/session/__tests__/`
-
-1. **SessionCard Component** (`SessionCard.test.tsx`)
-   - Tests rendering of session card with various states
-   - Examples:
-     - ✅ Displays "In Progress" badge for active sessions
-     - ✅ Shows pre-vitals for not-started sessions
-     - ✅ Highlights anomalies with color-coded badges
-     - ✅ Renders machine ID on completed sessions
-
-2. **AnomalyBadge Component** (implicit via SessionCard tests)
-   - Verifies anomaly badges render with correct severity color
-
-**Coverage**: 3/3 tests passing (component rendering + props validation)
-
----
-
-## Data Model
-
-### Entity Relationship Diagram
-
-```mermaid
-erDiagram
-    PATIENT ||--o{ DIALYSIS_SESSION : has
-    
-    PATIENT {
-        ObjectId _id
-        string mrn "unique, immutable"
-        string name
-        date dateOfBirth
-        string primaryDiagnosis
-        float dryWeight "kg"
-        date createdAt
-        date updatedAt
-    }
-    
-    DIALYSIS_SESSION {
-        ObjectId _id
-        ObjectId patientId "references Patient"
-        date date
-        string status "not_started|in_progress|completed|pending"
-        float preWeight "kg"
-        int preHeartRate "bpm"
-        string preBP "systolic/diastolic"
-        float postWeight "kg"
-        int postHeartRate "bpm"
-        string postBP "systolic/diastolic"
-        int targetDuration "minutes"
-        int duration "minutes"
-        string machineId
-        string notes
-        object anomalies "array of detected anomalies"
-        int queuePosition
-        date createdAt
-        date updatedAt
-    }
-```
-
----
-
+## Data Models
 ### Patient Schema (MongoDB)
 ```typescript
 {
   _id: ObjectId,
-  mrn: String (unique, immutable),
   name: String,
-  dateOfBirth: Date,
-  primaryDiagnosis: String,
-  dryWeight: Number (kg),
+  mrn: String,            // unique, immutable
+  dryWeight: Number,
+  dateOfBirth?: Date,
+  primaryDiagnosis?: String,
   createdAt: Date,
   updatedAt: Date
 }
 ```
 
-### DialysisSession Schema (MongoDB)
+### Session Schema (MongoDB)
 ```typescript
 {
   _id: ObjectId,
-  patientId: ObjectId (ref: Patient),
-  date: Date,
-  status: "not_started" | "in_progress" | "completed" | "pending",
-  
-  // Pre-session vitals (recorded when session starts)
-  preWeight: Number (kg),
-  preHeartRate: Number (bpm),
-  preBP: String ("systolic/diastolic"),
-  
-  // Post-session vitals (recorded when session ends)
-  postWeight: Number (kg),
-  postHeartRate: Number (bpm),
-  postBP: String ("systolic/diastolic"),
-  
-  // Session metadata
-  targetDuration: Number (minutes),
-  duration: Number (minutes, set when completed),
+  patientId: ObjectId,
+  scheduledDate: Date,
+  status: "not_started" | "in_progress" | "completed",
   machineId: String,
-  notes: String,
-  
-  // Computed
-  anomalies: Array<{
-    type: "excess_weight_gain" | "high_post_bp" | "short_session" | "long_session",
-    severity: "warning" | "critical"
-  }>,
-  
-  queuePosition: Number,
+  nurseId?: String,
+  preWeight?: Number,
+  postWeight?: Number | null,
+  preBloodPressure?: { systolic: Number, diastolic: Number },
+  postBloodPressure?: { systolic: Number, diastolic: Number } | null,
+  sessionDurationMinutes?: Number | null,
+  targetDurationMinutes: Number,
+  nurseNotes?: String | null,
+  queuePosition?: Number,
+  anomalies: Array<{ type: String, severity: "warning" | "critical", message: String }>,
   createdAt: Date,
   updatedAt: Date
 }
 ```
 
----
-
-## Example Scenarios (Seed Data)
-
-The seed script populates 6 patients with varied session scenarios:
-
-1. **Ananya Patel** (MRN: 1001)
-   - In-progress session with high post-BP (156 mmHg) and short-duration anomaly
-   - Demonstrates multi-anomaly flagging
-
-2. **Michael Reyes** (MRN: 1002)
-   - Completed session with all normal vitals, no anomalies
-
-3. **Farah Khan** (MRN: 1003)
-   - Not-started session with pre-vitals entered (59.2 kg, 134/84)
-   - Shows pre-session weight for comparison
-
-4. **Leo Martins** (MRN: 1004)
-   - In-progress normal session (no anomalies yet)
-
-5. **Nora Ibrahim** (MRN: 1005)
-   - Completed session with long-duration warning anomaly
-
-6. **Omar Haddad** (MRN: 1006)
-   - Registered but no session scheduled today
-   - Demonstrates patient without active session
-
-Run `npm run seed` in the backend to populate the database.
-
----
-
-## Frontend Component Hierarchy
-
-```mermaid
-graph TB
-    subgraph App["App.tsx"]
-        AppLayout["AppLayout.tsx"]
-        Sidebar["Sidebar.tsx"]
-    end
-    
-    subgraph Pages["Pages"]
-        PS["PatientsPage.tsx"]
-        TS["TodaySchedule.tsx"]
-    end
-    
-    subgraph Modals["Patient Modals"]
-        APM["AddPatientModal.tsx"]
-        EPM["EditPatientModal.tsx"]
-        PHM["PatientHistoryModal.tsx"]
-    end
-    
-    subgraph SessionComp["Session Components"]
-        SC["SessionCard.tsx"]
-        ASM["AddSessionModal.tsx"]
-        CSM["CompleteSessionModal.tsx"]
-        NE["NotesEditor.tsx"]
-    end
-    
-    subgraph UI["UI Components"]
-        AB["AnomalyBadge.tsx"]
-        SB["StatusBadge.tsx"]
-        Card["card.tsx"]
-        Button["button.tsx"]
-        Dialog["dialog.tsx"]
-    end
-    
-    AppLayout --> Sidebar
-    AppLayout --> Pages
-    
-    PS --> APM
-    PS --> EPM
-    PS --> PHM
-    
-    TS --> ASM
-    TS --> SC
-    SC --> CSM
-    SC --> NE
-    
-    SC --> AB
-    SC --> SB
-    SC --> Card
-    SC --> Button
-    
-    APM --> Dialog
-    EPM --> Dialog
-    CSM --> Dialog
-    
-    SC --> UI
-    
-    style App fill:#e1f5ff
-    style Pages fill:#f3e5f5
-    style Modals fill:#fff3e0
-    style SessionComp fill:#e8f5e9
-    style UI fill:#f1f8e9
+## Tests
+Run:
+```bash
+cd backend && npm test
+cd frontend && npm test
 ```
 
----
+- `backend/src/utils/__tests__/anomalyDetector.test.ts` - anomaly detection business rules; expected pass count contributes to backend total.
+- `backend/src/routes/__tests__/sessions.test.ts` - session API route behavior and validations; backend expected: 10 tests passing.
+- `frontend/src/components/session/__tests__/SessionCard.test.tsx` - session card rendering and anomaly indicators; frontend expected: 3 tests passing.
+
+## Seed Data
+- Ananya Patel (MRN 1001): in-progress, high post-BP + short-session anomaly.
+- Michael Reyes (MRN 1002): completed, normal run, no anomalies.
+- Farah Khan (MRN 1003): scheduled/not-started with pre-vitals entered.
+- Leo Martins (MRN 1004): in-progress, normal trend.
+- Nora Ibrahim (MRN 1005): completed with long-session warning.
+- Omar Haddad (MRN 1006): registered patient without a same-day session.
 
 ## Project Structure
-
-```
+```text
 dialysis-dashboard/
 ├── backend/
 │   ├── src/
 │   │   ├── config/
-│   │   │   ├── db.ts              # MongoDB connection
-│   │   │   └── anomalyConfig.ts   # Threshold configuration
+│   │   │   ├── anomalyConfig.ts
+│   │   │   └── db.ts
 │   │   ├── controllers/
 │   │   │   ├── patientController.ts
 │   │   │   └── sessionController.ts
+│   │   ├── middleware/
+│   │   │   ├── errorHandler.ts
+│   │   │   └── validate.ts
 │   │   ├── models/
 │   │   │   ├── Patient.ts
 │   │   │   └── Session.ts
@@ -674,289 +177,63 @@ dialysis-dashboard/
 │   │   │   ├── sessionRoutes.ts
 │   │   │   └── __tests__/
 │   │   │       └── sessions.test.ts
+│   │   ├── scripts/
+│   │   │   └── seed.ts
 │   │   ├── utils/
 │   │   │   ├── anomalyDetector.ts
 │   │   │   └── __tests__/
 │   │   │       └── anomalyDetector.test.ts
-│   │   ├── middleware/
-│   │   │   ├── validate.ts
-│   │   │   └── errorHandler.ts
-│   │   ├── scripts/
-│   │   │   └── seed.ts
-│   │   └── index.ts               # Express app entry
+│   │   └── index.ts
 │   ├── package.json
 │   └── tsconfig.json
-│
 ├── frontend/
 │   ├── src/
+│   │   ├── api/
+│   │   │   ├── client.ts
+│   │   │   ├── patients.ts
+│   │   │   └── sessions.ts
 │   │   ├── components/
 │   │   │   ├── layout/
-│   │   │   │   ├── AppLayout.tsx
-│   │   │   │   └── Sidebar.tsx
 │   │   │   ├── patient/
-│   │   │   │   ├── AddPatientModal.tsx
-│   │   │   │   ├── EditPatientModal.tsx
-│   │   │   │   └── PatientHistoryModal.tsx
 │   │   │   ├── session/
-│   │   │   │   ├── SessionCard.tsx
-│   │   │   │   ├── AddSessionModal.tsx
-│   │   │   │   ├── CompleteSessionModal.tsx
-│   │   │   │   ├── NotesEditor.tsx
 │   │   │   │   └── __tests__/
 │   │   │   │       └── SessionCard.test.tsx
 │   │   │   └── ui/
-│   │   │       ├── AnomalyBadge.tsx
-│   │   │       ├── StatusBadge.tsx
-│   │   │       └── ... (shadcn components)
+│   │   ├── context/
+│   │   │   └── ThemeContext.tsx
 │   │   ├── pages/
 │   │   │   ├── PatientsPage.tsx
 │   │   │   └── TodaySchedule.tsx
-│   │   ├── api/
-│   │   │   ├── client.ts          # Axios HTTP client
-│   │   │   ├── patients.ts
-│   │   │   └── sessions.ts
 │   │   ├── types/
 │   │   │   └── index.ts
-│   │   ├── context/
-│   │   │   └── ThemeContext.tsx
 │   │   ├── App.tsx
+│   │   ├── index.css
 │   │   └── main.tsx
 │   ├── package.json
 │   └── vite.config.ts
-│
 └── README.md
 ```
 
----
+## AI Tools Used
+### 1. What AI was used for
+- Drafting API documentation structure and endpoint summaries.
+- Generating baseline unit-test scaffolds for Jest and Vitest.
+- Suggesting refactor candidates for session UI components.
+- Producing first-pass README formatting and section organization.
 
-## Resources & Documentation
+### 2. What was reviewed manually
+- Clinical thresholds and anomaly rules in configuration.
+- Validation rules for required fields and state transitions.
+- Session-card rendering details for status, vitals, and anomalies.
+- Seed scenarios to ensure anomaly/non-anomaly coverage.
 
-- **MongoDB Documentation**: [docs.mongodb.com](https://docs.mongodb.com)
-- **Express.js Guide**: [expressjs.com](https://expressjs.com)
-- **React Hooks**: [react.dev](https://react.dev)
-- **Tailwind CSS**: [tailwindcss.com](https://tailwindcss.com)
+### 3. Example disagreement with AI output
+AI suggested one large `VitalsComponent` with conditional rendering for display and editing states. I split it into focused parts (`VitalsDisplay`, input/modal flows, and `AnomalyBadge`) to keep responsibilities separate, reduce prop complexity, and make tests easier to maintain.
 
----
-
-## Development Workflow
-
-1. **Feature branches**: Create a feature branch off `main`
-   ```bash
-   git checkout -b feat/add-patient-notes
-   ```
-
-2. **Testing**: Run tests locally before pushing
-   ```bash
-   npm test (in backend & frontend directories)
-   ```
-
-3. **Commits**: Atomic, descriptive commits
-   ```bash
-   git commit -m "feat: add patient history modal with session export"
-   ```
-
-4. **Pull Requests**: Push to GitHub and create a PR with a clear description
-
----
-## Future Enhancements
-
-- **Authentication & Authorization**: Role-based access control (nurse, doctor, admin)
-- **Real-time Updates**: WebSocket integration for live session status across devices
-- **ML-based Anomaly Detection**: Personalized baselines per patient instead of global thresholds
-- **Machine Pool Management**: Auto-assign patients from queue when machines become available
-- **Audit Logging**: Record all data changes for HIPAA compliance
-- **Multi-site Support**: Timezone handling and per-unit configuration
-- **Export Reports**: PDF/CSV export for session summaries and patient history
-- **Mobile App**: Native iOS/Android for point-of-care documentation
-
----
-
-## Support & Troubleshooting
-
-**Issue**: "MONGO_URI is not defined"
-- Ensure `.env` file exists in `backend/` with a valid MongoDB connection string.
-
-**Issue**: "Cannot POST /api/sessions"
-- Check that the backend server is running (`npm run dev` from `backend/`)
-
-**Issue**: Frontend won't load
-- Verify backend is accessible at `http://localhost:5000`
-- Check VITE_API_URL environment variable if custom backend URL is used
-
-**Issue**: Seed script fails
-- Ensure MongoDB Atlas credentials are correct and network access is allowed
-- Clear duplicate collections: `db.patients.deleteMany({})` and retry seed
-
----
-
-## License
-
-This project is provided as-is for educational and clinical training purposes.
-
----
-
-## Contact & Feedback
-
-For questions or feature requests, open an issue or contact the development team.
-
----
-
-## Verifying the Working Demo
-
-### 1. Quick Local Demo (5 minutes)
-
-```bash
-# Start backend
-cd backend
-npm run dev
-# Should see: Server running on http://localhost:5000
-
-# In another terminal, start frontend
-cd frontend
-npm run dev
-# Should see: VITE v8 ready in http://localhost:5173
-```
-
-Then open **http://localhost:5173** in your browser.
-
-### 2. Verify Key Workflows
-
-**Workflow 1: View Today's Schedule**
-- The dashboard loads with 6 seeded patients and their today's sessions
-- Filter tabs: All, Anomalies, Upcoming, In Progress, Completed
-- Cards show patient name, MRN, weight, BP, duration, anomaly badges
-
-**Workflow 2: Filter by Anomalies**
-- Click "Anomalies" tab
-- Should show only sessions with detected issues (e.g., Ananya Patel's high post-BP)
-- Anomaly badges display severity (🔴 critical or ⚠️ warning)
-
-**Workflow 3: Start a Session**
-- Click "Add Session" button on a patient card
-- Enter pre-weight, pre-BP, target duration
-- Submit → Session moves to "In Progress"
-- ⚠️ Note: Pre-weight is mandatory; form validates this
-
-**Workflow 4: Complete a Session**
-- Click "Complete Session" on an in-progress session
-- Enter post-weight, post-BP, notes
-- Submit → System detects anomalies and displays them
-
-**Workflow 5: Edit Notes (Live)**
-- Click notes icon on any session
-- Type clinical notes; auto-saves
-- Confirm changes appear in UI
-
-### 3. Run All Tests
-
-```bash
-# Backend tests (anomaly detection, API routes)
-cd backend
-npm test
-# Expected: 10/10 tests passing
-
-# Frontend tests (SessionCard component rendering)
-cd frontend
-npm test
-# Expected: 3/3 tests passing
-```
-
-### 4. Verify Database Seeding
-
-```bash
-cd backend
-npm run seed
-# You should see successful seed with 6 patients created
-# Check MongoDB Atlas > Collections > patients and sessions
-```
-
----
-
-## AI Tools & Collaboration
-
-### What AI (GitHub Copilot) Was Used For
-
-1. **Boilerplate & Scaffolding** (30%)
-   - Express route stubs and Mongoose schema templates
-   - React functional component patterns (hooks, props)
-   - TypeScript type definitions for API contracts
-   - Tailwind CSS layout classes
-
-2. **Debugging & Error Handling** (20%)
-   - Identifying validation edge cases (pre-weight must be > 0)
-   - Suggesting try-catch patterns for MongoDB operations
-   - Helping structure consistent error responses
-
-3. **Testing** (15%)
-   - Generating Jest test cases for anomaly detection logic
-   - Vitest component test structure and assertions
-   - Mock data and test fixtures
-
-4. **Documentation** (15%)
-   - Initial README structure and sections
-   - API endpoint documentation examples
-   - Mermaid diagram syntax and structure
-
-5. **Code Organization** (20%)
-   - Suggesting logical file splits (controllers, models, routes)
-   - Recommending pure function patterns for anomaly detection
-   - Component hierarchy and reusability patterns
-
-### What Was Reviewed & Changed Manually
-
-1. **Clinical Logic** ✏️
-   - All anomaly thresholds reviewed against ESRD best practices
-   - Weight gain logic: validated that calculation is `pre_weight - dry_weight`
-   - Pre-weight validation: insisted on > 0 check before session start
-   - MRN normalization: split between schema and controller layers
-
-2. **Data Layer Design** ✏️
-   - Removed unused `assignedUnit` field completely (end-to-end cleanup)
-   - Added MRN immutability and duplicate checking
-   - Ensured Session references Patient via patientId
-   - Configured unique indexes on MRN
-
-3. **UI/UX Refinements** ✏️
-   - Anomaly badge placement and stacking (vertical layout)
-   - BP spacing reduction (BP arrow gap tightened from 1 to 0.5)
-   - Machine ID visibility on completed sessions
-   - Pre-weight display for not-started sessions
-   - Complete Session button width standardization
-
-4. **Component Refactoring** ✏️
-   - SessionCard component memoization for performance
-   - Separated concerns: VitalsDisplay, NotesEditor as sub-components
-   - Removed prop drilling via custom hooks
-   - Added proper loading/error state handling
-
-5. **Seed Data** ✏️
-   - Created diverse patient scenarios (anomalies, normal, pending, registered-only)
-   - Added pre-vitals for Farah Khan's not-started session
-   - Validated anomaly detection logic against seeded data
-
-### Example: Where I Disagreed with AI
-
-**Issue**: AI suggested a single `Vitals` component with many conditional props.
-
-**My Decision**: Split into smaller, focused components:
-- `VitalsDisplay` (read-only pre/post vitals)
-- `VitalsInput` (form for capturing vitals)
-- `AnomalyBadge` (separate anomaly rendering)
-
-**Why**: Clearer separation of concerns, easier to test, less prop drilling, more reusable. The AI's approach would have created component bloat.
-
----
-
-## Submission Checklist Verification
-
-- ✅ **Git repository** with clean, atomic commit history (9 meaningful commits)
-- ✅ **README.md** with setup, architecture diagrams, assumptions, trade-offs, limitations
-- ✅ **Seed script** (`npm run seed`) with 6 patients and varied scenarios
-- ✅ **Tests** (10 backend Jest + 3 frontend Vitest = 13 tests passing)
-- ✅ **Working demo** verified locally (see "Verifying the Working Demo" section above)
-- ✅ **AI tools section** documenting usage, manual reviews, and disagreements
-
----
-
-**Last Updated**: March 2026  
-**Status**: MVP (Minimum Viable Product) — Production-ready for pilot deployment
+## Known Limitations & What's Next
+- No authentication or role-based access control yet.
+- No live updates; schedule refresh is request-driven.
+- Rule-based thresholds are global, not patient-personalized.
+- No audit export/reporting pipeline for compliance workflows.
+- Queue tooling is basic and lacks conflict-aware scheduling.
+- Multi-center timezone and unit-level policy configuration is pending.
