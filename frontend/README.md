@@ -1,73 +1,65 @@
-# React + TypeScript + Vite
+# Dialysis Dashboard Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React + TypeScript + Vite client for the Dialysis Dashboard.
 
-Currently, two official plugins are available:
+This app provides:
+- Today's session queue with status-aware actions (start/complete)
+- Patient directory with quick scheduling
+- Session anomaly visualization and nurse notes workflow
+- Machine-aware scheduling support
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Tech Stack
+- React 19
+- TypeScript
+- Vite
+- Axios
+- Tailwind + shadcn-style UI primitives
+- Vitest + Testing Library
 
-## React Compiler
+## Prerequisites
+- Node.js 18+
+- Backend API running (default: `http://localhost:5000/api`)
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## Local Setup
+1. Install dependencies:
+```bash
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+2. Configure environment:
+Create `.env` in this `frontend` folder.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```env
+VITE_API_URL=http://localhost:5000/api
 ```
+
+If `VITE_API_URL` is not provided, the app defaults to `http://localhost:5000/api`.
+
+3. Start development server:
+```bash
+npm run dev
+```
+
+App URL: `http://localhost:5173`
+
+## Available Scripts
+- `npm run dev` - Start Vite dev server
+- `npm run build` - Type-check and build production bundle
+- `npm run preview` - Preview production build locally
+- `npm run lint` - Run ESLint
+- `npm run test` - Run Vitest test suite
+
+## Project Structure
+```text
+src/
+  api/           # Axios client + API modules
+  components/    # UI, patient, session, layout components
+  context/       # Theme and shared context providers
+  pages/         # Route-level pages
+  types/         # Shared frontend TypeScript types
+```
+
+## Notes
+- Session and patient pages depend on backend response contracts (especially `/sessions/today`).
+- Machine availability is derived by backend from active sessions (`not_started`/`in_progress`).
+- For full-stack setup instructions, see the repository root README.
