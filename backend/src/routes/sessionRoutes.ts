@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { body } from 'express-validator';
 import validate from '../middleware/validate';
+import requirePermission from '../middleware/requirePermission';
 import {
   createSession,
   completeSession,
@@ -19,6 +20,7 @@ const router = Router();
  */
 router.post(
   '/',
+  requirePermission('session:create'),
   validate([
     body('patientId').notEmpty().withMessage('Patient ID is required'),
     body('machineId').notEmpty().withMessage('Machine ID is required'),
@@ -47,19 +49,20 @@ router.post(
 /**
  * GET /api/sessions — list sessions with optional pagination/filtering
  */
-router.get('/', getPaginatedSessions);
+router.get('/', requirePermission('session:view'), getPaginatedSessions);
 
 /**
  * GET /api/sessions/today — today's sessions
  * Must be before /:id to avoid "today" being parsed as an ObjectId
  */
-router.get('/today', getTodaySessions);
+router.get('/today', requirePermission('session:view'), getTodaySessions);
 
 /**
  * PATCH /api/sessions/:id — update session status (start session)
  */
 router.patch(
   '/:id',
+  requirePermission('session:start'),
   validate([
     body('status')
       .isIn(['in_progress'])
@@ -73,6 +76,7 @@ router.patch(
  */
 router.patch(
   '/:id/complete',
+  requirePermission('session:complete'),
   validate([
     body('postWeight')
       .isFloat({ gt: 0 })
@@ -97,16 +101,36 @@ router.patch(
 /**
  * PATCH /api/sessions/:id/notes — update nurse notes
  */
-router.patch('/:id/notes', updateNurseNotes);
+router.patch(
+  '/:id/notes',
+  requirePermission('session:notes'),
+  validate([
+    body('nurseNotes')
+      .exists({ values: 'null' })
+      .withMessage('Nurse notes are required')
+      .isString()
+      .withMessage('Nurse notes must be a string'),
+  ]),
+  updateNurseNotes
+);
 
 /**
  * PATCH /api/sessions/:id/queue — update queue position
  */
-router.patch('/:id/queue', reorderQueue);
+router.patch(
+  '/:id/queue',
+  requirePermission('session:reorder'),
+  validate([
+    body('direction')
+      .isIn(['up', 'down'])
+      .withMessage("Direction must be 'up' or 'down'"),
+  ]),
+  reorderQueue
+);
 
 /**
  * GET /api/sessions/:id — single session detail
  */
-router.get('/:id', getSessionById);
+router.get('/:id', requirePermission('session:view'), getSessionById);
 
 export default router;

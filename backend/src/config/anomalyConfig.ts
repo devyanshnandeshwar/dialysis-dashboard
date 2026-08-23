@@ -13,6 +13,13 @@ const anomalyConfig = {
   EXCESS_WEIGHT_GAIN_KG: 2.0,
 
   /**
+   * Interdialytic weight gain (kg) treated as critical rather than a warning.
+   * Stated explicitly rather than derived from the warning threshold so the
+   * two can be tuned independently.
+   */
+  CRITICAL_WEIGHT_GAIN_KG: 3.0,
+
+  /**
    * Upper systolic blood-pressure threshold (mmHg).
    * A pre- or post-session systolic reading ≥ 160 mmHg is classified
    * as stage-2 hypertension and may require medication adjustment

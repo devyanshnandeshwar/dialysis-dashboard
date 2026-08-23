@@ -1,10 +1,11 @@
 import Patient from '../models/Patient';
 import DialysisSession from '../models/Session';
-import { getTodayRange } from '../utils/dateUtils';
+import { getDayRange } from '../utils/dateUtils';
+import { badRequest, notFound, conflict } from '../utils/errors';
 
 export class PatientService {
   static async createPatient(data: any) {
-    const { name, mrn, dryWeight, dateOfBirth, primaryDiagnosis } = data;
+    const { name, mrn, dryWeight, dateOfBirth, primaryDiagnosis, gender, phoneNumber } = data;
 
     const normalizedMrn = String(mrn || '')
       .trim()
@@ -13,7 +14,7 @@ export class PatientService {
 
     const existingPatient = await Patient.findOne({ mrn: normalizedMrn });
     if (existingPatient) {
-      throw new Error('MRN already exists');
+      throw conflict('MRN already exists');
     }
 
     const patient = await Patient.create({
@@ -22,6 +23,8 @@ export class PatientService {
       dryWeight,
       dateOfBirth,
       primaryDiagnosis,
+      gender,
+      phoneNumber,
     });
 
     return patient;
@@ -29,7 +32,7 @@ export class PatientService {
 
   static async getPatients() {
     const patients = await Patient.find().sort({ createdAt: -1 }).lean();
-    const { start: startOfDay, end: endOfDay } = getTodayRange();
+    const { start: startOfDay, end: endOfDay } = getDayRange();
 
     // Get session stats per patient
     const stats = await DialysisSession.aggregate([
@@ -90,7 +93,7 @@ export class PatientService {
     const patient = await Patient.findById(id);
 
     if (!patient) {
-      throw new Error('Patient not found');
+      throw notFound('Patient not found');
     }
 
     const recentSessions = await DialysisSession.find({
@@ -105,10 +108,10 @@ export class PatientService {
   static async updatePatient(id: string, updateData: any) {
     delete updateData.mrn;
 
-    const { name, dryWeight, dateOfBirth, primaryDiagnosis } = updateData;
+    const { name, dryWeight, dateOfBirth, primaryDiagnosis, gender, phoneNumber } = updateData;
 
     if (dryWeight !== undefined && (typeof dryWeight !== 'number' || dryWeight <= 0)) {
-      throw new Error('dryWeight must be greater than 0');
+      throw badRequest('dryWeight must be greater than 0');
     }
 
     const update: Record<string, unknown> = {};
@@ -116,6 +119,8 @@ export class PatientService {
     if (dryWeight !== undefined) update.dryWeight = dryWeight;
     if (dateOfBirth !== undefined) update.dateOfBirth = dateOfBirth;
     if (primaryDiagnosis !== undefined) update.primaryDiagnosis = primaryDiagnosis;
+    if (gender !== undefined) update.gender = gender;
+    if (phoneNumber !== undefined) update.phoneNumber = phoneNumber;
 
     const patient = await Patient.findByIdAndUpdate(
       id,
@@ -124,7 +129,7 @@ export class PatientService {
     );
 
     if (!patient) {
-      throw new Error('Patient not found');
+      throw notFound('Patient not found');
     }
 
     return patient;

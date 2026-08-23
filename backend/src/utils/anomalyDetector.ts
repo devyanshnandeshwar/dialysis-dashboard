@@ -14,6 +14,7 @@ interface PatientData {
 
 interface AnomalyConfig {
   EXCESS_WEIGHT_GAIN_KG: number;
+  CRITICAL_WEIGHT_GAIN_KG: number;
   HIGH_SYSTOLIC_BP_MMHG: number;
   SHORT_SESSION_DEVIATION_MINUTES: number;
   LONG_SESSION_DEVIATION_MINUTES: number;
@@ -34,33 +35,33 @@ const detectAnomalies = (
 ): IAnomaly[] => {
   const anomalies: IAnomaly[] = [];
 
-  // Rule 1 — Excess interdialytic weight gain
+  // Rule 1 — Excess interdialytic weight gain.
+  // Thresholds are inclusive: a gain landing exactly on a threshold flags.
   if (session.preWeight != null) {
     const gain = session.preWeight - patient.dryWeight;
-    const criticalThreshold = config.EXCESS_WEIGHT_GAIN_KG * 1.5;
 
-    if (gain > criticalThreshold) {
+    if (gain >= config.CRITICAL_WEIGHT_GAIN_KG) {
       anomalies.push({
         type: 'excess_weight_gain',
         severity: 'critical',
-        message: `Interdialytic weight gain of ${gain.toFixed(1)}kg exceeds threshold of ${config.EXCESS_WEIGHT_GAIN_KG}kg`,
+        message: `Interdialytic weight gain of ${gain.toFixed(1)}kg is at or above the critical threshold of ${config.CRITICAL_WEIGHT_GAIN_KG}kg`,
       });
-    } else if (gain > config.EXCESS_WEIGHT_GAIN_KG) {
+    } else if (gain >= config.EXCESS_WEIGHT_GAIN_KG) {
       anomalies.push({
         type: 'excess_weight_gain',
         severity: 'warning',
-        message: `Interdialytic weight gain of ${gain.toFixed(1)}kg exceeds threshold of ${config.EXCESS_WEIGHT_GAIN_KG}kg`,
+        message: `Interdialytic weight gain of ${gain.toFixed(1)}kg is at or above the threshold of ${config.EXCESS_WEIGHT_GAIN_KG}kg`,
       });
     }
   }
 
   // Rule 2 — High post-dialysis systolic BP
   if (session.postBloodPressure?.systolic != null) {
-    if (session.postBloodPressure.systolic > config.HIGH_SYSTOLIC_BP_MMHG) {
+    if (session.postBloodPressure.systolic >= config.HIGH_SYSTOLIC_BP_MMHG) {
       anomalies.push({
         type: 'high_post_bp',
         severity: 'critical',
-        message: `Post-dialysis systolic BP ${session.postBloodPressure.systolic} mmHg exceeds ${config.HIGH_SYSTOLIC_BP_MMHG} mmHg`,
+        message: `Post-dialysis systolic BP ${session.postBloodPressure.systolic} mmHg is at or above ${config.HIGH_SYSTOLIC_BP_MMHG} mmHg`,
       });
     }
   }

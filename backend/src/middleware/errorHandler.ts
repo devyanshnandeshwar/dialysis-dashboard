@@ -1,23 +1,31 @@
 import { Request, Response, NextFunction } from 'express';
 import mongoose from 'mongoose';
+import { AppError } from '../utils/errors';
 
-interface AppError extends Error {
-  statusCode?: number;
+interface MongoDuplicateKeyError extends Error {
   code?: number | string;
-  errors?: Record<string, { message: string }>;
   keyPattern?: Record<string, unknown>;
 }
 
 /**
  * Global error handler — catches all errors bubbled up via next(err).
- * Returns a consistent { error, details? } shape.
+ * Returns a consistent { success, error, details? } shape.
  */
 const errorHandler = (
-  err: AppError,
+  err: Error,
   _req: Request,
   res: Response,
   _next: NextFunction
 ) => {
+  if (err instanceof AppError) {
+    res.status(err.statusCode).json({
+      success: false,
+      error: err.message,
+      ...err.details,
+    });
+    return;
+  }
+
   if (err instanceof mongoose.Error.ValidationError) {
     const details = Object.entries(err.errors).map(([field, value]) => ({
       field,
@@ -32,12 +40,25 @@ const errorHandler = (
     return;
   }
 
-  if (err.code === 11000) {
-    const hasMrn = Boolean(err.keyPattern && 'mrn' in err.keyPattern);
-    res.status(409).json({
-      success: false,
-      error: hasMrn ? 'MRN already exists' : 'Duplicate key error',
-    });
+  const { code, keyPattern } = err as MongoDuplicateKeyError;
+
+  if (code === 11000) {
+    const duplicatedKeys = Object.keys(keyPattern ?? {});
+
+    if (duplicatedKeys.includes('mrn')) {
+      res.status(409).json({ success: false, error: 'MRN already exists' });
+      return;
+    }
+
+    if (duplicatedKeys.includes('patientId') && duplicatedKeys.includes('scheduledDay')) {
+      res.status(409).json({
+        success: false,
+        error: 'Patient already has a session scheduled for this date',
+      });
+      return;
+    }
+
+    res.status(409).json({ success: false, error: 'Duplicate key error' });
     return;
   }
 
@@ -49,10 +70,14 @@ const errorHandler = (
     return;
   }
 
-  const statusCode = err.statusCode || 500;
-  res.status(statusCode).json({
+  // Anything reaching here is unexpected. Log it server-side and return a
+  // generic message — err.message can carry connection strings and other
+  // internals that must not reach the client.
+  console.error('Unhandled error:', err);
+
+  res.status(500).json({
     success: false,
-    error: err.message || 'Internal server error',
+    error: 'Internal server error',
   });
 };
 

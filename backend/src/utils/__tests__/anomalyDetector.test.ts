@@ -41,6 +41,54 @@ describe('Anomaly Detector', () => {
     });
   });
 
+  // Thresholds are documented in the README as ">=", so a value landing exactly
+  // on one must flag.
+  it('flags a weight gain sitting exactly on the warning threshold', () => {
+    const session = { ...baseSession, preWeight: 74 }; // gain = 2.0kg exactly
+    const anomalies = detectAnomalies(session, basePatient, anomalyConfig);
+    expect(anomalies).toHaveLength(1);
+    expect(anomalies[0]).toMatchObject({
+      type: 'excess_weight_gain',
+      severity: 'warning'
+    });
+  });
+
+  it('flags a weight gain sitting exactly on the critical threshold', () => {
+    const session = { ...baseSession, preWeight: 75 }; // gain = 3.0kg exactly
+    const anomalies = detectAnomalies(session, basePatient, anomalyConfig);
+    expect(anomalies).toHaveLength(1);
+    expect(anomalies[0]).toMatchObject({
+      type: 'excess_weight_gain',
+      severity: 'critical'
+    });
+  });
+
+  it('leaves a weight gain just under the warning threshold alone', () => {
+    const session = { ...baseSession, preWeight: 73.9 }; // gain = 1.9kg
+    const anomalies = detectAnomalies(session, basePatient, anomalyConfig);
+    expect(anomalies).toEqual([]);
+  });
+
+  it('reports the critical threshold, not the warning one, in a critical message', () => {
+    const session = { ...baseSession, preWeight: 75.5 };
+    const anomalies = detectAnomalies(session, basePatient, anomalyConfig);
+    expect(anomalies[0]!.message).toContain(`${anomalyConfig.CRITICAL_WEIGHT_GAIN_KG}kg`);
+    expect(anomalies[0]!.message).not.toContain(`${anomalyConfig.EXCESS_WEIGHT_GAIN_KG}kg`);
+  });
+
+  it('flags a post BP sitting exactly on the threshold', () => {
+    const session = {
+      ...baseSession,
+      postBloodPressure: { systolic: anomalyConfig.HIGH_SYSTOLIC_BP_MMHG, diastolic: 90 }
+    };
+    const anomalies = detectAnomalies(session, basePatient, anomalyConfig);
+    expect(anomalies).toHaveLength(1);
+    expect(anomalies[0]).toMatchObject({
+      type: 'high_post_bp',
+      severity: 'critical'
+    });
+  });
+
   it('returns critical when post BP systolic is dangerously high', () => {
     const session = { 
       ...baseSession, 

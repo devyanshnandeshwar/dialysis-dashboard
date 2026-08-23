@@ -6,6 +6,8 @@ export interface IPatient extends Document {
   dryWeight: number;
   dateOfBirth?: Date;
   primaryDiagnosis?: string;
+  gender?: 'Male' | 'Female' | 'Other';
+  phoneNumber?: string;
 }
 
 const PatientSchema = new Schema<IPatient>(
@@ -34,13 +36,22 @@ const PatientSchema = new Schema<IPatient>(
     primaryDiagnosis: {
       type: String,
     },
+    gender: {
+      type: String,
+      enum: ['Male', 'Female', 'Other'],
+    },
+    phoneNumber: {
+      type: String,
+      trim: true,
+    },
   },
   {
     timestamps: true,
   }
 );
 
-PatientSchema.index({ mrn: 1 }, { unique: true });
+// `unique: true` on the mrn path already declares the unique index — declaring
+// it again here made Mongoose warn about a duplicate index on every boot.
 
 const Patient = mongoose.model<IPatient>('Patient', PatientSchema);
 

@@ -2,7 +2,12 @@ import DialysisSession from '../models/Session';
 import Patient from '../models/Patient';
 import anomalyConfig from '../config/anomalyConfig';
 import detectAnomalies from '../utils/anomalyDetector';
-import { getTodayRange } from '../utils/dateUtils';
+import { getDayRange, getDayKey } from '../utils/dateUtils';
+import { badRequest, notFound, conflict } from '../utils/errors';
+import { withTransaction } from '../utils/transaction';
+
+const isDuplicateKeyError = (err: unknown): boolean =>
+  typeof err === 'object' && err !== null && (err as { code?: number }).code === 11000;
 
 export class SessionService {
   static async createSession(data: any) {
@@ -23,24 +28,28 @@ export class SessionService {
     const maxDate = new Date(today);
     maxDate.setDate(maxDate.getDate() + 30);
 
+    if (Number.isNaN(scheduled.getTime())) {
+      throw badRequest('Scheduled date must be a valid date');
+    }
+
     if (scheduled < today) {
-      throw new Error('Cannot schedule a session in the past');
+      throw badRequest('Cannot schedule a session in the past');
     }
 
     if (scheduled > maxDate) {
-      throw new Error('Cannot schedule more than 30 days in advance');
+      throw badRequest('Cannot schedule more than 30 days in advance');
     }
 
     if (!machineId) {
-      throw new Error('Machine ID is required');
+      throw badRequest('Machine ID is required');
     }
 
     const patient = await Patient.findById(patientId);
     if (!patient) {
-      throw new Error('Patient not found');
+      throw notFound('Patient not found');
     }
 
-    const { start: startOfDay, end: endOfDay } = getTodayRange(scheduled);
+    const { start: startOfDay, end: endOfDay } = getDayRange(scheduled);
 
     const duplicate = await DialysisSession.findOne({
       patientId,
@@ -48,9 +57,9 @@ export class SessionService {
     });
 
     if (duplicate) {
-      const error: any = new Error('Patient already has a session scheduled for this date');
-      error.existingSessionId = duplicate._id;
-      throw error;
+      throw conflict('Patient already has a session scheduled for this date', {
+        existingSessionId: duplicate._id,
+      });
     }
 
     const todayCount = await DialysisSession.countDocuments({
@@ -59,19 +68,18 @@ export class SessionService {
 
     const existingSession = await DialysisSession.findOne({
       machineId,
-      scheduledDate: { $gte: startOfDay, $lte: endOfDay },
+      scheduledDate: { $gte: startOfDay, $lt: endOfDay },
       status: { $in: ['not_started', 'in_progress'] },
     });
 
     if (existingSession) {
-      const error: any = new Error('Machine already assigned to another session today');
-      error.machineId = machineId;
-      throw error;
+      throw conflict('Machine already assigned to another session today', { machineId });
     }
 
     const sessionData = {
       patientId,
       scheduledDate,
+      scheduledDay: getDayKey(scheduled),
       status,
       machineId,
       nurseId,
@@ -86,22 +94,41 @@ export class SessionService {
       anomalies: [],
     };
 
-    return await DialysisSession.create(sessionData);
+    try {
+      return await DialysisSession.create(sessionData);
+    } catch (err) {
+      // The checks above are read-then-write, so two concurrent requests can
+      // both reach this point. The unique (patientId, scheduledDay) index is
+      // what actually prevents the double booking; translate it to the same
+      // 409 the pre-check would have produced.
+      if (isDuplicateKeyError(err)) {
+        const existing = await DialysisSession.findOne({
+          patientId,
+          scheduledDate: { $gte: startOfDay, $lt: endOfDay },
+        });
+
+        throw conflict('Patient already has a session scheduled for this date', {
+          existingSessionId: existing?._id,
+        });
+      }
+
+      throw err;
+    }
   }
 
   static async updateSession(id: string, status: string) {
     const session = await DialysisSession.findById(id);
 
     if (!session) {
-      throw new Error('Session not found');
+      throw notFound('Session not found');
     }
 
     if (status === 'in_progress' && !session.machineId) {
-      throw new Error('Cannot start session — no machine assigned');
+      throw badRequest('Cannot start session — no machine assigned');
     }
 
     if (status === 'in_progress' && (session.preWeight == null || session.preWeight <= 0)) {
-      throw new Error('Cannot start session — pre-session weight is required');
+      throw badRequest('Cannot start session — pre-session weight is required');
     }
 
     session.status = status as 'not_started' | 'in_progress' | 'completed';
@@ -122,11 +149,11 @@ export class SessionService {
     );
 
     if (!session) {
-      throw new Error('Session not found');
+      throw notFound('Session not found');
     }
 
     if (!session.machineId) {
-      throw new Error('Cannot complete session — no machine assigned');
+      throw badRequest('Cannot complete session — no machine assigned');
     }
 
     const patient = session.patientId as unknown as { dryWeight: number };
@@ -152,7 +179,7 @@ export class SessionService {
     session.anomalies = anomalies;
     await session.save();
 
-    const { start: startOfDay, end: endOfDay } = getTodayRange(new Date(session.scheduledDate));
+    const { start: startOfDay, end: endOfDay } = getDayRange(new Date(session.scheduledDate));
     const activeUsingSameMachine = await DialysisSession.countDocuments({
       _id: { $ne: session._id },
       machineId: session.machineId,
@@ -173,7 +200,7 @@ export class SessionService {
   }
 
   static async getTodaySessions(includeCompleted: boolean = true) {
-    const { start: startOfDay, end: endOfDay } = getTodayRange();
+    const { start: startOfDay, end: endOfDay } = getDayRange();
 
     const statusFilter = includeCompleted
       ? undefined
@@ -229,7 +256,7 @@ export class SessionService {
     );
 
     if (!session) {
-      throw new Error('Session not found');
+      throw notFound('Session not found');
     }
 
     return session;
@@ -242,58 +269,93 @@ export class SessionService {
     );
 
     if (!session) {
-      throw new Error('Session not found');
+      throw notFound('Session not found');
     }
 
     return session;
   }
 
   static async reorderQueue(id: string, direction: 'up' | 'down') {
-    const session = await DialysisSession.findById(id);
-    if (!session) {
-      throw new Error('Session not found');
+    if (direction !== 'up' && direction !== 'down') {
+      throw badRequest("Direction must be 'up' or 'down'");
     }
 
-    const { start: startOfDay, end: endOfDay } = getTodayRange();
+    const session = await DialysisSession.findById(id);
+    if (!session) {
+      throw notFound('Session not found');
+    }
+
+    const { start: startOfDay, end: endOfDay } = getDayRange();
 
     const todaySessions = await DialysisSession.find({
-      scheduledDate: { $gte: startOfDay, $lte: endOfDay }
+      scheduledDate: { $gte: startOfDay, $lt: endOfDay }
     }).sort({ queuePosition: 1 });
 
     const currentIndex = todaySessions.findIndex(s => s._id.toString() === id);
     if (currentIndex === -1) {
-      throw new Error('Session not in today schedule');
+      throw notFound('Session not in today schedule');
     }
 
     const swapIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
     if (swapIndex < 0 || swapIndex >= todaySessions.length) {
-      throw new Error('Cannot move further in that direction');
+      throw badRequest('Cannot move further in that direction');
     }
 
     const currentSession = todaySessions[currentIndex]!;
     const swapSession = todaySessions[swapIndex]!;
 
-    const currentPos = currentSession.queuePosition;
-    const swapPos = swapSession.queuePosition;
+    // queuePosition is optional on the schema; fall back to the sorted index so
+    // a session created without one still gets a concrete position on reorder.
+    const currentPos = currentSession.queuePosition ?? currentIndex + 1;
+    const swapPos = swapSession.queuePosition ?? swapIndex + 1;
 
-    await DialysisSession.findByIdAndUpdate(currentSession._id, { queuePosition: swapPos });
-    await DialysisSession.findByIdAndUpdate(swapSession._id, { queuePosition: currentPos });
+    // Both writes must land or neither, otherwise a failure between them leaves
+    // two sessions sharing a queue position.
+    await withTransaction(async (dbSession) => {
+      await DialysisSession.bulkWrite(
+        [
+          {
+            updateOne: {
+              filter: { _id: currentSession._id },
+              update: { $set: { queuePosition: swapPos } },
+            },
+          },
+          {
+            updateOne: {
+              filter: { _id: swapSession._id },
+              update: { $set: { queuePosition: currentPos } },
+            },
+          },
+        ],
+        dbSession ? { session: dbSession } : {}
+      );
+    });
 
     return await DialysisSession.find({
-      scheduledDate: { $gte: startOfDay, $lte: endOfDay }
+      scheduledDate: { $gte: startOfDay, $lt: endOfDay }
     })
       .populate('patientId', 'name mrn dryWeight')
       .sort({ queuePosition: 1 });
   }
 
-  static async getPaginatedSessions(queryOptions: { patientId?: string, page?: string, limit?: string }) {
-    const { patientId, page = '1', limit = '5' } = queryOptions;
+  static async getPaginatedSessions(queryOptions: { patientId?: unknown, page?: unknown, limit?: unknown }) {
+    const { patientId, page, limit } = queryOptions;
 
     const query: Record<string, any> = {};
-    if (patientId) query.patientId = patientId;
 
-    const pageNum = parseInt(page, 10) || 1;
-    const limitNum = parseInt(limit, 10) || 5;
+    // Express parses `?patientId[$ne]=x` into an object, and assigning it
+    // straight onto the query let a caller inject Mongo operators and invert
+    // the filter. Coercing to a primitive string makes that impossible.
+    if (typeof patientId === 'string' && patientId.trim()) {
+      query.patientId = String(patientId.trim());
+    }
+
+    const MAX_LIMIT = 100;
+    const pageNum = Math.max(1, parseInt(String(page ?? '1'), 10) || 1);
+    const limitNum = Math.min(
+      MAX_LIMIT,
+      Math.max(1, parseInt(String(limit ?? '5'), 10) || 5)
+    );
     const skip = (pageNum - 1) * limitNum;
 
     const [sessions, total] = await Promise.all([
