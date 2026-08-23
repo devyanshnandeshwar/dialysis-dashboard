@@ -186,21 +186,21 @@ export default function AddSessionModal({
   };
 
   const fieldClass =
-    'bg-bg border-border text-text-primary text-sm placeholder:text-text-muted focus-visible:border-accent focus-visible:ring-1 focus-visible:ring-accent-glow h-9';
+    'bg-bg border-border text-text-primary text-sm placeholder:text-text-muted focus-visible:border-accent-edge h-9';
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button
           size="sm"
-          className={`bg-accent text-white hover:brightness-110 shadow-sm font-semibold gap-1.5 ${triggerClassName}`}
+          className={`bg-accent-solid text-accent-on-solid hover:brightness-90 font-semibold gap-1.5 ${triggerClassName}`}
         >
           <Plus className="w-4 h-4" />
           {triggerLabel}
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="bg-surface border-border shadow-2xl text-text-primary max-w-lg max-h-[85vh] overflow-y-auto p-0">
+      <DialogContent className="text-text-primary max-w-lg max-h-[85vh] overflow-y-auto p-0">
         <DialogHeader className="px-6 py-4 border-b border-border-subtle bg-surface-alt/40">
           <DialogTitle className="text-text-primary text-lg font-bold">
             Record New Session
@@ -224,7 +224,7 @@ export default function AddSessionModal({
               </SelectContent>
             </Select>
             {errors.patientId && (
-              <p className="text-xs text-critical">{errors.patientId}</p>
+              <p className="text-xs text-critical-fg">{errors.patientId}</p>
             )}
           </div>
 
@@ -232,7 +232,7 @@ export default function AddSessionModal({
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label className="text-[10px] tracking-widest text-text-muted uppercase font-bold">
-                Machine ID <span className="text-critical">*</span>
+                Machine ID <span className="text-critical-fg">*</span>
               </Label>
               <Select value={machineId} onValueChange={setMachineId} disabled={machinesLoading}>
                 <SelectTrigger className={`w-full ${fieldClass}`}>
@@ -248,7 +248,7 @@ export default function AddSessionModal({
                         disabled={disabled}
                         className="text-text-primary focus:bg-surface-alt"
                       >
-                        <span className={disabled ? 'text-critical' : 'text-success'}>
+                        <span className={disabled ? 'text-critical-fg' : 'text-success-fg'}>
                           {machine.id} - {disabled ? 'In Use' : 'Available'}
                         </span>
                       </SelectItem>
@@ -257,7 +257,7 @@ export default function AddSessionModal({
                 </SelectContent>
               </Select>
               {errors.machineId && (
-                <p className="text-xs text-critical">{errors.machineId}</p>
+                <p className="text-xs text-critical-fg">{errors.machineId}</p>
               )}
             </div>
             <div className="space-y-1.5">
@@ -272,13 +272,13 @@ export default function AddSessionModal({
                 className={fieldClass}
               />
               {errors.scheduledDate && (
-                <p className="text-xs text-critical">{errors.scheduledDate}</p>
+                <p className="text-xs text-critical-fg">{errors.scheduledDate}</p>
               )}
             </div>
           </div>
 
           {allMachinesInUse && (
-            <div className="rounded-md border border-warning/40 bg-warning-bg px-3 py-2 text-xs text-warning font-medium">
+            <div className="rounded-md border border-warning-edge bg-warning-tint px-3 py-2 text-xs text-warning-fg font-medium">
               All machines are currently in use. Please wait for a session to complete.
             </div>
           )}
@@ -295,7 +295,7 @@ export default function AddSessionModal({
               className={fieldClass}
             />
             {errors.targetDuration && (
-              <p className="text-xs text-critical">{errors.targetDuration}</p>
+              <p className="text-xs text-critical-fg">{errors.targetDuration}</p>
             )}
           </div>
 
@@ -311,7 +311,7 @@ export default function AddSessionModal({
               className={fieldClass}
             />
             {errors.preWeight && (
-              <p className="text-xs text-critical">{errors.preWeight}</p>
+              <p className="text-xs text-critical-fg">{errors.preWeight}</p>
             )}
           </div>
 
@@ -326,7 +326,7 @@ export default function AddSessionModal({
               className={fieldClass}
             />
             {errors.preBpSystolic && (
-              <p className="text-xs text-critical">{errors.preBpSystolic}</p>
+              <p className="text-xs text-critical-fg">{errors.preBpSystolic}</p>
             )}
           </div>
 
@@ -341,7 +341,7 @@ export default function AddSessionModal({
               className={fieldClass}
             />
             {errors.preBpDiastolic && (
-              <p className="text-xs text-critical">{errors.preBpDiastolic}</p>
+              <p className="text-xs text-critical-fg">{errors.preBpDiastolic}</p>
             )}
           </div>
 
@@ -367,7 +367,7 @@ export default function AddSessionModal({
           <Button
             onClick={handleSubmit}
             disabled={submitting || allMachinesInUse || !machineId}
-            className="w-full bg-accent text-white hover:brightness-110 shadow-md font-semibold text-sm mt-4 mb-2"
+            className="w-full bg-accent-solid text-accent-on-solid hover:brightness-90 font-semibold text-sm mt-4 mb-2"
           >
             {submitting ? (
               <>

@@ -1,39 +1,38 @@
 import { useState } from 'react';
 import { usePatients } from '@/hooks/usePatients';
-import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Users, Search, Loader2 } from 'lucide-react';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Users, Search, UserX } from 'lucide-react';
 import AddPatientModal from '@/components/patient/AddPatientModal';
 import AddSessionModal from '@/components/session/AddSessionModal';
 import EditPatientModal from '@/components/patient/EditPatientModal';
 import PatientHistoryModal from '@/components/patient/PatientHistoryModal';
 import AnomalyBadge from '@/components/ui/AnomalyBadge';
 import StatusBadge from '@/components/ui/StatusBadge';
+import { useAuth } from '@/context/AuthContext';
 
-// Simple hash for gradient matching
-const gradients = [
-  'from-blue-500 to-cyan-400',
-  'from-purple-500 to-indigo-400',
-  'from-rose-500 to-pink-400',
-  'from-amber-500 to-orange-400',
-  'from-emerald-500 to-teal-400',
-];
-
-function getGradientForName(name: string) {
-  const hash = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  return gradients[hash % gradients.length];
-}
+/* Avatars used to hash the name into one of five decorative gradients. On a
+   screen where every other color encodes clinical severity, a color that means
+   nothing competes with the ones that do. Neutral monogram instead. */
 
 function getTodayStatusLabel(status?: 'not_started' | 'in_progress' | 'completed') {
-  if (status === 'not_started') return 'Today: Scheduled';
-  if (status === 'in_progress') return 'Today: In Progress';
-  if (status === 'completed') return 'Today: Completed';
+  if (status === 'not_started') return 'Today';
+  if (status === 'in_progress') return 'On machine';
+  if (status === 'completed') return 'Done today';
   return null;
 }
 
 export default function PatientsPage() {
   const { patients, loading, fetchPatients, updatePatient, addPatient } = usePatients();
+  const { can } = useAuth();
   
   const [search, setSearch] = useState('');
   const [diagnosisFilter, setDiagnosisFilter] = useState('all');
@@ -61,167 +60,200 @@ export default function PatientsPage() {
   });
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 pb-10">
-      {/* Header */}
-      <div className="sticky top-0 z-10 -mx-6 px-6 -mt-6 pt-6 pb-4 mb-6 backdrop-blur-sm bg-bg/80 border-b border-border-subtle flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-text-primary flex items-center gap-2">
-            <Users className="w-6 h-6 text-accent" />
-            Patients Directory
-          </h1>
-          <p className="text-sm text-text-muted mt-1">
-            {patients.length} total registered patient{patients.length !== 1 ? 's' : ''}
-          </p>
-      </div>
-      <AddPatientModal onPatientCreated={addPatient} />
-    </div>
-
-      {/* Filters */}
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-        <div className="relative max-w-md w-full">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-          <Input
-            placeholder="Search by name or MRN..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9 bg-surface border-border text-text-primary focus-visible:border-accent focus-visible:ring-accent-glow"
-          />
+    <div className="max-w-7xl mx-auto space-y-4 pb-10">
+      {/* Header. Filters live inside the glass panel so the page has one piece
+          of chrome instead of a blurred bar followed by a loose control row. */}
+      <div className="glass sticky top-0 z-10 rounded-xl px-4 py-3 mb-4 space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h1 className="text-xl font-bold text-text-primary flex items-center gap-2">
+              <Users className="w-5 h-5 text-accent-fg" />
+              Patients Directory
+            </h1>
+            <p className="text-sm text-text-secondary mt-0.5">
+              {patients.length} registered patient{patients.length !== 1 ? 's' : ''}
+            </p>
+          </div>
+          {can('patient:create') && <AddPatientModal onPatientCreated={addPatient} />}
         </div>
-        <select
-          value={diagnosisFilter}
-          onChange={(e) => setDiagnosisFilter(e.target.value)}
-          className="h-10 rounded-md border border-border bg-surface px-3 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-glow"
-        >
-          <option value="all">All Diagnoses</option>
-          {diagnosisOptions.map((diagnosis) => (
-            <option key={diagnosis} value={diagnosis}>
-              {diagnosis}
-            </option>
-          ))}
-        </select>
-        <button
-          type="button"
-          onClick={() => setHighRiskOnly((prev) => !prev)}
-          className={`h-10 rounded-md border px-3 text-sm font-medium transition-colors ${highRiskOnly
-            ? 'border-warning text-warning bg-warning-bg'
-            : 'border-border text-text-muted bg-surface hover:text-text-primary hover:bg-surface-hover'
+
+        {/* Filters */}
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <div className="relative w-full sm:max-w-xs">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
+            <Input
+              placeholder="Search by name or MRN..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="h-9 pl-9 bg-surface border-border text-text-primary placeholder:text-text-muted focus-visible:border-accent-solid"
+            />
+          </div>
+          <Select value={diagnosisFilter} onValueChange={setDiagnosisFilter}>
+            <SelectTrigger
+              size="sm"
+              aria-label="Filter by diagnosis"
+              className="h-9 w-full sm:w-52 bg-surface border-border text-text-primary"
+            >
+              <SelectValue placeholder="All Diagnoses" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Diagnoses</SelectItem>
+              {diagnosisOptions.map((diagnosis) => (
+                <SelectItem key={diagnosis} value={diagnosis}>
+                  {diagnosis}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <button
+            type="button"
+            aria-pressed={highRiskOnly}
+            onClick={() => setHighRiskOnly((prev) => !prev)}
+            className={`h-9 shrink-0 rounded-md border px-3 text-sm font-medium transition-colors ${
+              highRiskOnly
+                ? 'border-warning-edge bg-warning-tint text-warning-fg'
+                : 'border-border bg-surface text-text-secondary hover:text-text-primary hover:bg-surface-hover'
             }`}
-        >
-          High-Risk Only
-        </button>
+          >
+            High-Risk Only
+          </button>
+        </div>
       </div>
 
       {/* List */}
       {loading ? (
-        <div className="space-y-4 mt-8">
-          {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-28 w-full bg-surface-alt rounded-xl" />)}
+        <div className="space-y-2">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-20 w-full bg-surface-alt rounded-xl" />
+          ))}
         </div>
       ) : filteredPatients.length === 0 ? (
         <div className="text-center py-20 space-y-4">
-          <Loader2 className="w-12 h-12 text-text-muted mx-auto opacity-30" />
-          <p className="text-text-muted text-sm tracking-wide">No patients found matching your search.</p>
+          <UserX className="w-12 h-12 text-text-muted mx-auto opacity-30" />
+          <p className="text-text-muted text-sm">
+            {patients.length === 0
+              ? 'No patients registered yet.'
+              : 'No patients match your current filters.'}
+          </p>
         </div>
       ) : (
-        <div className="space-y-3 mt-4">
-          {filteredPatients.map((patient) => {
+        <div className="space-y-2">
+          {filteredPatients.map((patient, i) => {
             const initial = patient.name.charAt(0).toUpperCase();
-            const gradient = getGradientForName(patient.name);
 
             return (
-              <Card key={patient._id} className="group bg-surface border border-border-subtle transition-all duration-300 hover:bg-surface-hover/50 hover:shadow-lg hover:-translate-y-1 hover:border-accent/30 rounded-2xl overflow-hidden">
-                <CardContent className="p-4 md:p-5 flex flex-col md:flex-row md:items-center gap-4 md:gap-5">
-
-                  {/* Main Info w/ Avatar */}
-                  <div className="min-w-0 md:min-w-56 flex-1 flex items-center gap-3 md:gap-3.5">
-                    <div className={`w-12 h-12 rounded-full shrink-0 flex items-center justify-center text-white font-bold text-lg shadow-inner bg-linear-to-br ${gradient}`}>
-                      {initial}
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="text-base font-bold text-text-primary tracking-tight">{patient.name}</h3>
+              <div
+                key={patient._id}
+                className="surface-panel animate-row-in group rounded-xl px-4 py-3 transition-colors duration-200 hover:bg-surface-hover/40"
+                style={{ animationDelay: `${Math.min(i, 8) * 40}ms` }}
+              >
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
+                  {/* Identity. Fixed, for the same reason as the session card:
+                      a flexible identity column shifts every column after it. */}
+                  <div className="flex w-52 min-w-0 shrink-0 items-center gap-3">
+                    <Avatar className="size-9 shrink-0 border border-border">
+                      <AvatarFallback className="bg-surface-alt text-sm font-semibold text-text-secondary">
+                        {initial}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0">
+                      <h3 className="truncate text-[15px] font-semibold text-text-primary">
+                        {patient.name}
+                      </h3>
+                      {/* Badge sits under the name rather than beside it: on a
+                          fixed-width column a sibling chip squeezes the name
+                          down to an ellipsis. */}
+                      <div className="mt-0.5 flex items-center gap-1.5">
+                        <span className="font-mono text-[11px] text-text-secondary">
+                          {patient.mrn}
+                        </span>
                         {patient.todaySession?.status && (
-                          <span className="text-[10px] px-2.5 py-1 rounded-md border border-accent/20 bg-accent/10 text-accent font-semibold flex items-center shadow-xs">
+                          <span className="shrink-0 rounded-full border border-accent-edge bg-accent-tint px-1.5 text-[10px] font-semibold text-accent-fg">
                             {getTodayStatusLabel(patient.todaySession.status)}
                           </span>
                         )}
                       </div>
-                      <div className="text-xs text-text-secondary font-mono tracking-wide mt-1">{patient.mrn}</div>
                     </div>
                   </div>
 
-                  {/* Patient Stats Columns */}
-                  <div className="flex gap-4 lg:gap-6 text-sm flex-wrap items-center flex-1 border-l border-border-subtle pl-3.5 md:pl-4 py-1">
-                    <div className="flex flex-col gap-1">
-                      <span className="text-[10px] tracking-widest text-text-muted uppercase font-bold">DRY WEIGHT</span>
-                      <span className="font-medium text-text-primary">{patient.dryWeight} kg</span>
-                    </div>
-                    <div className="flex flex-col gap-1 w-36 truncate">
-                      <span className="text-[10px] tracking-widest text-text-muted uppercase font-bold">DIAGNOSIS</span>
-                      <span className="font-medium text-text-primary truncate" title={patient.primaryDiagnosis || 'None'}>
-                        {patient.primaryDiagnosis || 'Unspecified'}
-                      </span>
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      <span className="text-[10px] tracking-widest text-text-muted uppercase font-bold">SESSIONS</span>
-                      <span className="font-medium text-text-primary">{patient.totalSessions || 0}</span>
-                    </div>
-                  </div>
-
-                  {/* Last Session Box */}
-                  <div className="w-full md:w-56 min-h-24 bg-surface/50 p-3 rounded-xl border border-border-subtle flex flex-col justify-center gap-1.5 shrink-0 shadow-[inset_0_2px_4px_rgba(0,0,0,0.1)] group-hover:bg-bg/50 transition-colors">
-                    <div className="text-[10px] tracking-widest text-text-muted uppercase font-bold flex items-center gap-1.5">LATEST SESSION</div>
-                    {patient.lastSession ? (
-                      <div className="flex items-center gap-2.5">
-                        <span className="text-sm font-semibold text-text-primary">
-                          {new Date(patient.lastSession.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                        </span>
-                        <StatusBadge status={patient.lastSession.status} />
+                  {/* Demographics. A fixed grid rather than a wrapping flex row,
+                      so the labels line up card to card instead of landing at a
+                      different x-position on every row. */}
+                  <dl className="flex shrink-0 flex-wrap gap-x-3 gap-y-2">
+                    {[
+                      { label: 'Gender', value: patient.gender || '--', width: 'w-14' },
+                      { label: 'Phone', value: patient.phoneNumber || '--', width: 'w-20' },
+                      { label: 'Dry weight', value: `${patient.dryWeight} kg`, width: 'w-20' },
+                      { label: 'Sessions', value: String(patient.totalSessions || 0), width: 'w-12' },
+                      { label: 'Diagnosis', value: patient.primaryDiagnosis || 'Unspecified', width: 'w-36' },
+                    ].map(({ label, value, width }) => (
+                      <div key={label} className={`min-w-0 ${width}`}>
+                        <dt className="whitespace-nowrap text-[10px] font-semibold uppercase tracking-wider text-text-muted">
+                          {label}
+                        </dt>
+                        <dd
+                          className="mt-0.5 truncate text-sm font-medium text-text-primary"
+                          title={value}
+                        >
+                          {value}
+                        </dd>
                       </div>
-                    ) : (
-                      <span className="text-xs text-text-muted italic opacity-80">No sessions recorded</span>
-                    )}
-                    <div className="flex flex-wrap items-start gap-1.5 mt-1 min-h-5">
-                      {patient.lastAnomalies && patient.lastAnomalies.length > 0 ? (
+                    ))}
+                  </dl>
+
+                  {/* Latest session */}
+                  <div className="min-w-0 flex-1 basis-40">
+                    <div className="text-[10px] font-semibold uppercase tracking-wider text-text-muted">
+                      Latest session
+                    </div>
+                    <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
+                      {patient.lastSession ? (
                         <>
-                          {patient.lastAnomalies.slice(0, 2).map((anom, i) => (
+                          <span className="text-sm font-medium text-text-primary tabular-nums">
+                            {new Date(patient.lastSession.date).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                            })}
+                          </span>
+                          <StatusBadge status={patient.lastSession.status} />
+                          {patient.lastAnomalies?.slice(0, 2).map((anom, i) => (
                             <AnomalyBadge key={i} anomaly={anom} />
                           ))}
-                          {patient.lastAnomalies.length > 2 && (
-                            <span className="text-[10px] text-text-secondary font-semibold">+{patient.lastAnomalies.length - 2}</span>
+                          {(patient.lastAnomalies?.length || 0) > 2 && (
+                            <span className="text-[11px] font-medium text-text-secondary">
+                              +{(patient.lastAnomalies?.length || 0) - 2}
+                            </span>
                           )}
                         </>
                       ) : (
-                        <span className="text-[10px] text-text-muted uppercase tracking-wide">No alerts</span>
+                        <span className="text-sm text-text-muted">No sessions recorded</span>
                       )}
                     </div>
                   </div>
 
-                  {/* Action Buttons */}
-                  <div className="flex flex-col gap-2 shrink-0 w-full md:w-40 pt-1 md:pt-0">
+                  {/* Actions */}
+                  <div className="ml-auto flex shrink-0 items-center gap-1.5">
                     {patient.todaySession ? (
-                      <span className="h-9 w-full flex items-center justify-center text-xs px-3 rounded-md border border-success/30 bg-success/10 text-success font-medium tracking-wide shadow-xs">
+                      <span className="inline-flex h-8 items-center rounded-md border border-success-edge bg-success-tint px-2.5 text-xs font-medium text-success-fg">
                         Scheduled
                       </span>
                     ) : (
-                      <AddSessionModal
-                        onSessionCreated={fetchPatients}
-                        preselectedPatientId={patient._id}
-                        lockPatient
-                        triggerLabel="Schedule Today"
-                        triggerClassName="w-full justify-center"
-                      />
+                      can('session:create') && (
+                        <AddSessionModal
+                          onSessionCreated={fetchPatients}
+                          preselectedPatientId={patient._id}
+                          lockPatient
+                          triggerLabel="Schedule"
+                        />
+                      )
                     )}
-                    <div className="flex items-center gap-2">
-                      <div className="opacity-80 hover:opacity-100 transition-opacity flex-1">
-                        <PatientHistoryModal patient={patient} triggerClassName="w-full justify-center" />
-                      </div>
-                      <div className="opacity-80 hover:opacity-100 transition-opacity">
-                        <EditPatientModal patient={patient} onPatientUpdated={updatePatient} />
-                      </div>
-                    </div>
+                    <PatientHistoryModal patient={patient} />
+                    {can('patient:edit') && (
+                      <EditPatientModal patient={patient} onPatientUpdated={updatePatient} />
+                    )}
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             );
           })}
         </div>

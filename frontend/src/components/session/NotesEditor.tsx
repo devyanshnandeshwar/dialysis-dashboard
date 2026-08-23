@@ -9,12 +9,15 @@ interface Props {
   sessionId: string;
   initialNotes: string;
   onNotesSaved: (newNotes: string) => Promise<void> | void;
+  /** Roles without `session:notes` still read the notes, they just cannot edit. */
+  readOnly?: boolean;
 }
 
 export default function NotesEditor({
   sessionId,
   initialNotes,
   onNotesSaved,
+  readOnly = false,
 }: Props) {
   const [editing, setEditing] = useState(false);
   const [notes, setNotes] = useState(initialNotes);
@@ -39,14 +42,14 @@ export default function NotesEditor({
     setEditing(false);
   };
 
-  if (editing) {
+  if (editing && !readOnly) {
     return (
       <div className="space-y-3" onClick={(e) => e.stopPropagation()}>
         <Textarea
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           rows={3}
-          className="bg-bg border-border text-text-primary text-sm placeholder:text-text-muted focus-visible:border-accent focus-visible:ring-1 focus-visible:ring-accent-glow rounded-md resize-none"
+          className="bg-bg border-border text-text-primary text-sm placeholder:text-text-muted focus-visible:border-accent-edge rounded-md resize-none"
           placeholder="Enter nurse notes..."
           autoFocus
         />
@@ -55,7 +58,7 @@ export default function NotesEditor({
             size="sm"
             onClick={handleSave}
             disabled={saving}
-            className="bg-accent text-[#08101d] hover:brightness-110 h-8 text-xs gap-1.5 rounded-md shadow-sm font-semibold"
+            className="bg-accent-solid text-accent-on-solid hover:brightness-90 h-8 text-xs gap-1.5 rounded-md shadow-sm font-semibold"
           >
             {saving ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -80,21 +83,32 @@ export default function NotesEditor({
   }
 
   return (
-    <div className="flex items-start gap-3 group cursor-pointer" onClick={() => setEditing(true)}>
+    <div
+      className={`flex items-start gap-3 group ${readOnly ? '' : 'cursor-pointer'}`}
+      onClick={readOnly ? undefined : () => setEditing(true)}
+    >
       <StickyNote className="w-4 h-4 text-text-muted mt-0.5 shrink-0" />
       <p className="text-sm text-text-muted flex-1 leading-relaxed">
         {initialNotes || (
           <span className="italic opacity-60">No notes recorded yet.</span>
         )}
       </p>
+      {/* The surrounding div is a mouse convenience; this button is the real
+          control, so it must carry the handler and stay visible on focus. */}
+      {!readOnly && (
       <Button
         size="sm"
         variant="ghost"
         aria-label="Edit nurse notes"
-        className="opacity-0 group-hover:opacity-100 transition-opacity h-7 w-7 p-0 text-text-muted hover:text-accent hover:bg-accent-glow shrink-0 rounded-md"
+        onClick={(e) => {
+          e.stopPropagation();
+          setEditing(true);
+        }}
+        className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity h-7 w-7 p-0 text-text-muted hover:text-text-primary hover:bg-surface-hover shrink-0 rounded-md"
       >
         <Pencil className="w-3.5 h-3.5" />
       </Button>
+      )}
     </div>
   );
 }

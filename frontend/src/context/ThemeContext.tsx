@@ -12,10 +12,13 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
+  // Must resolve to the same value as the pre-paint script in index.html,
+  // otherwise React's first commit would flip the theme the script just set.
   const [theme, setTheme] = useState<Theme>(() => {
     try {
       const savedTheme = localStorage.getItem('dialysis-theme') as Theme | null;
-      return savedTheme === 'light' || savedTheme === 'dark' ? savedTheme : 'dark';
+      if (savedTheme === 'light' || savedTheme === 'dark') return savedTheme;
+      return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
     } catch {
       return 'dark';
     }

@@ -8,6 +8,22 @@
   <meta name="description"
     content="Dialysis Session Intake and Anomaly Detection Dashboard for managing patient dialysis sessions and surfacing clinical anomalies." />
   <title>Dialysis Dashboard</title>
+  <script>
+    // Runs before first paint so the themed class is on <html> when the first
+    // frame is composited. Without this the dark `:root` defaults render for a
+    // frame and light-mode users see the whole chrome flash dark on every load.
+    (function () {
+      try {
+        var stored = localStorage.getItem('dialysis-theme');
+        var theme = stored === 'light' || stored === 'dark'
+          ? stored
+          : (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+        document.documentElement.classList.add(theme);
+      } catch (e) {
+        document.documentElement.classList.add('dark');
+      }
+    })();
+  </script>
 </head>
 
 <body>

@@ -1,73 +1,254 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@fontsource-variable/inter";
 
 @custom-variant dark (&:is(.dark *));
 
+/* ---------------------------------------------------------------------------
+   General Sans, self-hosted from Fontshare (ITF Free Font License) rather than
+   linked from their CDN, so the app makes no third-party request on first paint
+   and still renders offline. 86 KB for four weights.
+--------------------------------------------------------------------------- */
+@font-face {
+  font-family: 'General Sans';
+  src: url('/fonts/general-sans-400.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'General Sans';
+  src: url('/fonts/general-sans-500.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'General Sans';
+  src: url('/fonts/general-sans-600.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'General Sans';
+  src: url('/fonts/general-sans-700.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ---------------------------------------------------------------------------
+   Design tokens.
+
+   MONOCHROME BY DEFAULT. The chrome is one neutral ramp on a single hue
+   (285.8, chroma <= 0.013 -- a cool cast, not a colour), and the primary action
+   is white on dark / near-black on light. Colour is spent only where it carries
+   meaning the interface would otherwise have to spell out in words:
+
+     pink  -> critical anomaly      cyan  -> session in progress
+     green -> session completed     amber -> warning anomaly
+
+   Everything else, focus ring included, is neutral. The supplied palette used
+   cyan for --primary, but cyan already means "patient currently on a machine"
+   here, so a cyan button would have read as a status. Monochroming the primary
+   removes that collision.
+
+   Badges are a SOFT TINT with hue-matched text, not a saturated fill. Saturated
+   fills maximise colour-vision separation but only by spreading the four levels
+   right across the lightness range, which is what made them look like four
+   unrelated colours sitting together. The tinted set keeps them at one visual
+   weight and reads as one family. The 4px card rails still use the saturated
+   --*-solid values: at that size a tint would not register at all.
+
+   Measured worst-case pairwise separation across normal vision, deuteranopia
+   and protanopia (CIE dE76, Vienot dichromat simulation):
+     dark 26.7        light 17.5
+   Light is below the ~20 "distinguishable by colour alone" bar, and that is a
+   deliberate trade for legibility and coherence: colour is NOT the only signal
+   here. Every severity also carries its own icon, a text label and the measured
+   value, which is what WCAG 1.4.1 actually asks for. Each text colour clears
+   4.5:1 against its own tint -- verify against the COMPOSITED tint, not the
+   card, if you change these.
+--------------------------------------------------------------------------- */
+
 @theme {
-  --color-bg: #020617;
-  --color-surface: #0f172a;
-  --color-surface-alt: #1e293b;
-  --color-surface-hover: #334155;
-  --color-border: #334155;
-  --color-border-subtle: #1e293b;
-  --color-text-primary: #f8fafc;
-  --color-text-secondary: #cbd5e1;
-  --color-text-muted: #94a3b8;
-  --color-accent: #3b82f6;
-  --color-accent-glow: rgba(59, 130, 246, 0.25);
-  --color-warning: #eab308;
-  --color-warning-bg: rgba(234, 179, 8, 0.1);
-  --color-critical: #ef4444;
-  --color-critical-bg: rgba(239, 68, 68, 0.1);
-  --color-success: #10b981;
-  --color-success-bg: rgba(16, 185, 129, 0.1);
+  --font-sans: 'General Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-serif: 'Noto Serif', ui-serif, Georgia, serif;
+
+  /* Neutral ramp (dark), from the supplied .dark block. */
+  --color-bg: #09090b;
+  --color-surface: #1b1b1e;
+  --color-surface-alt: #27272a;
+  --color-surface-hover: #3f3f46;
+  --color-border: #3f3f46;
+  --color-border-subtle: #27272a;
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #b3b3b4;
+  --color-text-muted: #a1a1aa;
+
+  /* Primary action: monochrome, so it can never be read as a status. */
+  --color-accent-solid: #ffffff;
+  --color-accent-on-solid: #09090b;
+  --color-accent-fg: #ffffff;
+  --color-accent-tint: rgba(255, 255, 255, 0.10);
+  --color-accent-edge: rgba(255, 255, 255, 0.20);
+
+  /* Focus: neutral too. A high-contrast ring with an offset is unmistakable
+     without introducing a sixth hue. */
+  --color-focus: #ffffff;
+
+  --color-critical-solid: #fb64b6;   /* pink-400  L* 64; black ink 7.20 */
+  --color-critical-on-solid: #09090b;
+  --color-critical-fg: #fb64b6;      /* 4.75 on its own tint */
+  --color-critical-tint: rgba(251, 100, 182, 0.18);
+  --color-critical-edge: rgba(251, 100, 182, 0.34);
+
+  --color-warning-solid: #fcd34d;    /* amber-300 L* 86; black ink 13.80 */
+  --color-warning-on-solid: #09090b;
+  --color-warning-fg: #fcd34d;       /* 7.90 on its own tint */
+  --color-warning-tint: rgba(251, 191, 36, 0.18);
+  --color-warning-edge: rgba(251, 191, 36, 0.34);
+
+  --color-success-solid: #7bf1a8;    /* green-300 L* 87; black ink 14.20 */
+  --color-success-on-solid: #09090b;
+  --color-success-fg: #7bf1a8;       /* 8.50 on its own tint */
+  --color-success-tint: rgba(5, 223, 114, 0.18);
+  --color-success-edge: rgba(5, 223, 114, 0.34);
+
+  --color-active-solid: #00d3f3;     /* cyan-400  L* 78; black ink 11.00 */
+  --color-active-on-solid: #09090b;
+  --color-active-fg: #00d3f3;        /* 6.58 on its own tint */
+  --color-active-tint: rgba(0, 211, 243, 0.18);
+  --color-active-edge: rgba(0, 211, 243, 0.34);
+
+  /* Legacy aliases so older utilities keep resolving. */
+  --color-accent: #ffffff;
+  --color-accent-glow: rgba(255, 255, 255, 0.25);
+  --color-warning: #fcd34d;
+  --color-warning-bg: rgba(252, 211, 77, 0.14);
+  --color-critical: #fb64b6;
+  --color-critical-bg: rgba(251, 100, 182, 0.14);
+  --color-success: #7bf1a8;
+  --color-success-bg: rgba(123, 241, 168, 0.13);
+}
+
+/* Glass material. Chrome only (sidebar, sticky headers, dialogs). It reuses the
+   supplied translucent --card value, so glass and card are one definition
+   rather than two that drift. Data surfaces stay opaque, see .surface-panel. */
+:root {
+  --glass-bg: oklch(0.274 0.006 286.033 / 0.6);
+  --glass-border: oklch(1 0 0 / 0.2);
+  --glass-highlight: oklch(1 0 0 / 0.09);
+  --glass-shadow: 0 16px 48px -20px rgba(0, 0, 0, 0.8);
+  --glass-blur: 20px;
+  --glass-solid: #1b1b1e;
 }
 
 .light {
-  --color-bg: #f8fafc;
-  --color-surface: #ffffff;
-  --color-surface-alt: #f1f5f9;
-  --color-surface-hover: #e2e8f0;
-  --color-border: #e2e8f0;
-  --color-border-subtle: #f1f5f9;
-  --color-text-primary: #0f172a;
-  --color-text-secondary: #475569;
-  --color-text-muted: #94a3b8;
-  --color-accent: #2563eb;
-  --color-accent-glow: rgba(37, 99, 235, 0.15);
-  --color-warning: #d97706;
-  --color-warning-bg: rgba(217, 119, 6, 0.08);
-  --color-critical: #dc2626;
-  --color-critical-bg: rgba(220, 38, 38, 0.08);
-  --color-success: #16a34a;
-  --color-success-bg: rgba(22, 163, 74, 0.08);
+  --glass-bg: oklch(1 0 0 / 0.7);
+  --glass-border: oklch(0.141 0.005 285.823 / 0.1);
+  --glass-highlight: oklch(1 0 0 / 0.9);
+  --glass-shadow: 0 16px 48px -24px oklch(0.141 0.005 285.823 / 0.22);
+  --glass-solid: #ffffff;
 }
 
 body {
   background: var(--color-bg);
   color: var(--color-text-primary);
-  font-family: "Inter", system-ui, sans-serif;
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   margin: 0;
 }
 
-@keyframes shimmer {
-  0% {
-    background-position: 200% 0;
+html {
+  font-family: var(--font-sans);
+}
+
+/* Monochrome page, so the ambient wash is a plain light bloom. A coloured haze
+   here would compete with the four status hues. */
+.app-ambient {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(70rem 40rem at 12% -10%, oklch(1 0 0 / 0.05), transparent 60%),
+    radial-gradient(60rem 36rem at 92% 4%, oklch(1 0 0 / 0.035), transparent 62%);
+}
+
+.light .app-ambient {
+  background:
+    radial-gradient(70rem 40rem at 12% -10%, oklch(0.141 0.005 285.823 / 0.04), transparent 60%),
+    radial-gradient(60rem 36rem at 92% 4%, oklch(0.141 0.005 285.823 / 0.03), transparent 62%);
+}
+
+.glass {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  box-shadow:
+    inset 0 1px 0 0 var(--glass-highlight),
+    var(--glass-shadow);
+}
+
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  .glass {
+    backdrop-filter: blur(var(--glass-blur)) saturate(150%);
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(150%);
   }
-  100% {
-    background-position: -200% 0;
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass {
+    background: var(--glass-solid);
   }
+}
+
+.surface-panel {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-subtle);
+  box-shadow:
+    inset 0 1px 0 0 var(--glass-highlight),
+    0 1px 2px rgba(0, 0, 0, 0.18);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .glass {
+    background: var(--glass-solid);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .app-ambient {
+    display: none;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Motion. Entrances are short and run once, so a queue that refreshes while a
+   nurse is reading it never re-animates under them.
+--------------------------------------------------------------------------- */
+@keyframes rowIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.animate-row-in {
+  animation: rowIn 260ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 @keyframes queueSwapFlash {
   0% {
-    box-shadow: 0 0 0 0 rgba(240, 165, 0, 0.45);
+    box-shadow: 0 0 0 0 var(--color-accent-edge);
   }
   100% {
-    box-shadow: 0 0 0 14px rgba(240, 165, 0, 0);
+    box-shadow: 0 0 0 14px rgba(255, 255, 255, 0);
   }
 }
 
@@ -75,33 +256,180 @@ body {
   animation: queueSwapFlash 500ms ease-out;
 }
 
-html {
-  font-family: "Inter", system-ui, sans-serif;
+/* A live session gets a slow breathing dot. It is the only looping animation in
+   the app, and it marks the one row that is actually changing. */
+@keyframes livePulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.45;
+    transform: scale(0.82);
+  }
 }
 
-/* Shadcn radix variables mapped to dark theme */
-:root {
-  --background: oklch(0.145 0 0); /* Fallback */
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.145 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.145 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.985 0 0);
-  --primary-foreground: oklch(0.145 0 0);
-  --secondary: oklch(0.205 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.205 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.205 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(0.205 0 0);
-  --input: oklch(0.205 0 0);
-  --ring: oklch(0.708 0 0);
-  --radius: 0.75rem;
+.animate-live {
+  animation: livePulse 2s ease-in-out infinite;
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-row-in,
+  .queue-swap-flash,
+  .animate-live {
+    animation: none;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Shadcn radix variables, from the supplied .dark block with the cyan primary
+   and ring made neutral. The five --chart-* tokens are omitted: nothing here
+   draws a chart, and five unused hues would undercut the rule above.
+   --destructive points at the app's own critical pink rather than adding a
+   second red, so an invalid field and a critical anomaly speak with one voice.
+--------------------------------------------------------------------------- */
+:root {
+  color-scheme: dark;
+  --background: oklch(0.141 0.005 285.823);
+  --foreground: oklch(1 0 0);
+  --card: oklch(0.274 0.006 286.033 / 0.6);
+  --card-foreground: oklch(1 0 0);
+  --popover: oklch(0.274 0.006 286.033);
+  --popover-foreground: oklch(1 0 0);
+  --primary: oklch(1 0 0);
+  --primary-foreground: oklch(0.141 0.005 285.823);
+  --secondary: oklch(1 0 0 / 0.1);
+  --secondary-foreground: oklch(1 0 0);
+  --muted: oklch(0.37 0.013 285.805);
+  --muted-foreground: oklch(0.967 0.001 286.375 / 0.7);
+  --accent: oklch(0.37 0.013 285.805);
+  --accent-foreground: oklch(1 0 0);
+  --destructive: oklch(0.72 0.19 350);
+  --destructive-foreground: oklch(0.141 0.005 285.823);
+  --border: oklch(1 0 0 / 0.2);
+  --input: oklch(1 0 0 / 0.2);
+  --ring: oklch(1 0 0 / 0.85);
+  --sidebar: oklch(0.141 0.005 285.823);
+  --sidebar-foreground: oklch(1 0 0);
+  --sidebar-primary: oklch(1 0 0 / 0.85);
+  --sidebar-primary-foreground: oklch(0 0 0 / 0.85);
+  --sidebar-accent: oklch(1 0 0 / 0.1);
+  --sidebar-accent-foreground: oklch(1 0 0);
+  --sidebar-border: oklch(1 0 0 / 0.125);
+  --sidebar-ring: oklch(1 0 0 / 0.6);
+  --radius: 0.625rem;
+}
+
+.light {
+  color-scheme: light;
+
+  --color-bg: #fafafa;
+  --color-surface: #ffffff;
+  --color-surface-alt: #f4f4f5;
+  --color-surface-hover: #e9e9ec;
+  --color-border: #d4d4d8;
+  --color-border-subtle: #e7e7ea;
+  --color-text-primary: #09090b;
+  --color-text-secondary: #52525b;
+  --color-text-muted: #6b6b76;
+
+  --color-accent-solid: #09090b;
+  --color-accent-on-solid: #ffffff;
+  --color-accent-fg: #09090b;
+  --color-accent-tint: rgba(9, 9, 11, 0.06);
+  --color-accent-edge: rgba(9, 9, 11, 0.18);
+
+  --color-focus: #09090b;
+
+  --color-critical-solid: #c6005c;   /* pink-700  white ink 5.91 */
+  --color-critical-on-solid: #ffffff;
+  --color-critical-fg: #c6005c;      /* pink-700, 4.95 on its own tint */
+  --color-critical-tint: rgba(246, 51, 154, 0.13);
+  --color-critical-edge: rgba(246, 51, 154, 0.30);
+
+  --color-warning-solid: #78350f;    /* amber-900 white ink 9.07 */
+  --color-warning-on-solid: #ffffff;
+  --color-warning-fg: #8e5f0f;       /* 5.00 on its tint over a plain card,
+                                        4.91 over a bg-surface/40 band -- it has
+                                        to clear both, see the note above */
+  --color-warning-tint: rgba(245, 158, 11, 0.13);
+  --color-warning-edge: rgba(245, 158, 11, 0.30);
+
+  --color-success-solid: #00a63e;    /* green-600 black ink 6.15 */
+  --color-success-on-solid: #09090b;
+  --color-success-fg: #0d542b;       /* green-900, 8.06 on its own tint */
+  --color-success-tint: rgba(0, 201, 80, 0.13);
+  --color-success-edge: rgba(0, 201, 80, 0.30);
+
+  --color-active-solid: #0092b8;     /* cyan-600  black ink 5.50 */
+  --color-active-on-solid: #09090b;
+  --color-active-fg: #007595;        /* cyan-700, 4.69 on its own tint */
+  --color-active-tint: rgba(0, 184, 219, 0.13);
+  --color-active-edge: rgba(0, 184, 219, 0.30);
+
+  --color-accent: #09090b;
+  --color-accent-glow: rgba(9, 9, 11, 0.2);
+  --color-warning: #8e5f0f;
+  --color-warning-bg: rgba(120, 53, 15, 0.10);
+  --color-critical: #c6005c;
+  --color-critical-bg: rgba(198, 0, 92, 0.08);
+  --color-success: #0d542b;
+  --color-success-bg: rgba(0, 166, 62, 0.10);
+
+  --background: oklch(0.985 0.001 285.8);
+  --foreground: oklch(0.141 0.005 285.823);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.141 0.005 285.823);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.141 0.005 285.823);
+  --primary: oklch(0.141 0.005 285.823);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.141 0.005 285.823 / 0.05);
+  --secondary-foreground: oklch(0.141 0.005 285.823);
+  --muted: oklch(0.967 0.001 286.375);
+  --muted-foreground: oklch(0.37 0.013 285.805);
+  --accent: oklch(0.967 0.001 286.375);
+  --accent-foreground: oklch(0.141 0.005 285.823);
+  --destructive: oklch(0.52 0.22 350);
+  --destructive-foreground: oklch(1 0 0);
+  --border: oklch(0.141 0.005 285.823 / 0.14);
+  --input: oklch(0.141 0.005 285.823 / 0.14);
+  --ring: oklch(0.141 0.005 285.823 / 0.7);
+  --sidebar: oklch(1 0 0);
+  --sidebar-foreground: oklch(0.141 0.005 285.823);
+  --sidebar-primary: oklch(0.141 0.005 285.823);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.141 0.005 285.823 / 0.05);
+  --sidebar-accent-foreground: oklch(0.141 0.005 285.823);
+  --sidebar-border: oklch(0.141 0.005 285.823 / 0.1);
+  --sidebar-ring: oklch(0.141 0.005 285.823 / 0.5);
+}
+
+/* ---------------------------------------------------------------------------
+   SHAPE SYSTEM. One rule, applied everywhere in app code:
+
+     rounded-full   pills        badges, status chips, filter chips, avatars
+     rounded-xl     containers   cards, panels, dialogs, the sidebar rail,
+                                 image frames
+     rounded-md     controls     buttons, inputs, selects, icon buttons, and
+                                 anything nested one level inside a container
+     rounded-none   full-bleed   the pinned landing nav, which spans the viewport
+
+   A mixed radius scale is only defensible with a stated rule, so this is it.
+   `rounded-lg` and `rounded-2xl` are deliberately unused in app code: they sit
+   between the three steps above and blur the distinction. Vendored shadcn
+   primitives under components/ui keep whatever radii they ship with.
+--------------------------------------------------------------------------- */
 
 @theme inline {
   --color-ring: var(--ring);
@@ -115,6 +443,9 @@ html {
   --color-popover-foreground: var(--popover-foreground);
   --color-card-foreground: var(--card-foreground);
   --color-foreground: var(--foreground);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-border: var(--sidebar-border);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -123,6 +454,12 @@ html {
 
 @layer base {
   * {
-    @apply border-border-radix outline-ring/50;
+    @apply border-border-radix;
+  }
+
+  /* One neutral focus treatment everywhere. */
+  :focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
   }
 }

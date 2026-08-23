@@ -4,7 +4,7 @@ import SessionCard from '@/components/session/SessionCard';
 import AddSessionModal from '@/components/session/AddSessionModal';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { CalendarDays, AlertTriangle, Loader2 } from 'lucide-react';
+import { CalendarDays, CalendarOff, AlertTriangle } from 'lucide-react';
 
 type FilterCategory = 'all' | 'anomalies' | 'upcoming' | 'in_progress' | 'completed';
 
@@ -17,28 +17,40 @@ const TODAY_DATE_FORMAT: Intl.DateTimeFormatOptions = {
   day: 'numeric',
 };
 
+const FILTER_LABELS: Record<FilterCategory, string> = {
+  all: 'All',
+  in_progress: 'In Progress',
+  upcoming: 'Upcoming',
+  completed: 'Completed',
+  anomalies: 'Anomalies',
+};
+
 export default function TodaySchedule() {
-  const { 
-    sessions, 
-    summary, 
-    loading, 
-    movingSessionId, 
-    fetchSessions, 
-    reorderSession, 
-    updatePatientInSession 
+  const {
+    sessions,
+    summary,
+    loading,
+    movingSessionId,
+    fetchSessions,
+    reorderSession,
+    updatePatientInSession
   } = useTodaySessions();
 
   const [filter, setFilter] = useState<FilterCategory>('all');
 
+  // Reorder indices are computed against the rendered list, so they only line up
+  // with the real queue when nothing is filtered out.
+  const canReorder = filter === 'all';
+
   const handleMoveUp = useCallback(async (id: string, index: number) => {
-    if (index === 0) return;
+    if (!canReorder || index === 0) return;
     await reorderSession(id, 'up', index, index - 1);
-  }, [reorderSession]);
+  }, [canReorder, reorderSession]);
 
   const handleMoveDown = useCallback(async (id: string, index: number) => {
-    if (index === sessions.length - 1) return;
+    if (!canReorder || index === sessions.length - 1) return;
     await reorderSession(id, 'down', index, index + 1);
-  }, [reorderSession, sessions.length]);
+  }, [canReorder, reorderSession, sessions.length]);
 
   const filtered = sessions.filter((s) => {
     if (filter === 'all') return true;
@@ -52,76 +64,70 @@ export default function TodaySchedule() {
     ...TODAY_DATE_FORMAT,
   });
 
-  const anomalyCount = summary.withAnomalies;
+  // One row instead of two: the counts and the filter controls were previously
+  // separate rows expressing the same taxonomy.
+  const filterChips: { key: FilterCategory; count: number; alert?: boolean }[] = [
+    { key: 'all', count: summary.total },
+    { key: 'in_progress', count: summary.inProgress },
+    { key: 'upcoming', count: summary.notStarted },
+    { key: 'completed', count: summary.completed },
+    { key: 'anomalies', count: summary.withAnomalies, alert: true },
+  ];
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6 pb-10">
-      <div className={`sticky ${HEADER_OFFSET_CLASS} z-20 -mx-6 px-6 -mt-6 pt-6 pb-5 mb-6 backdrop-blur-md bg-bg/85 border-b border-border-subtle shadow-[0_4px_24px_rgba(0,0,0,0.04)] space-y-5`}>
+    <div className="max-w-7xl mx-auto space-y-4 pb-10">
+      <div className={`glass sticky ${HEADER_OFFSET_CLASS} z-20 rounded-xl px-4 py-3 mb-4 space-y-3`}>
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold text-text-primary flex items-center gap-2.5">
-              <CalendarDays className="w-6 h-6 text-accent" />
+            <h1 className="text-xl font-bold text-text-primary flex items-center gap-2">
+              <CalendarDays className="w-5 h-5 text-accent-fg" />
               Today's Schedule
             </h1>
-            <p className="text-sm font-medium text-text-secondary mt-1">
+            <p className="text-sm text-text-secondary mt-0.5">
               {today}
             </p>
           </div>
           <AddSessionModal onSessionCreated={fetchSessions} />
         </div>
 
-        {/* Stats Row */}
-        <div className="flex flex-wrap gap-3">
-          <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-surface-alt/60 border border-border-subtle text-xs font-medium text-text-primary shadow-xs">
-            <span className="text-text-muted font-semibold tracking-wide uppercase text-[10px]">In Progress:</span> {summary.inProgress}
-          </div>
-          <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-surface-alt/60 border border-border-subtle text-xs font-medium text-text-primary shadow-xs">
-            <span className="text-text-muted font-semibold tracking-wide uppercase text-[10px]">Upcoming:</span> {summary.notStarted}
-          </div>
-          <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-surface-alt/60 border border-border-subtle text-xs font-medium text-text-primary shadow-xs">
-            <span className="text-text-muted font-semibold tracking-wide uppercase text-[10px]">Completed:</span> {summary.completed}
-          </div>
-          <div className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full shadow-xs text-xs font-medium ${anomalyCount > 0
-            ? 'bg-critical/15 border border-critical/30 text-text-primary'
-            : 'bg-surface-alt/60 border border-border-subtle text-text-primary'
-            }`}>
-            {anomalyCount > 0 && <AlertTriangle className="w-3.5 h-3.5" />}
-            <span className={anomalyCount > 0 ? 'text-[10px] font-semibold tracking-wide uppercase' : 'text-text-muted font-semibold tracking-wide uppercase text-[10px]'}>Anomalies:</span> {anomalyCount}
-          </div>
-        </div>
+        {/* Counts double as filters */}
+        <div className="flex flex-wrap gap-2" role="group" aria-label="Filter sessions">
+          {filterChips.map(({ key, count, alert }) => {
+            const isActive = filter === key;
+            const isAlerting = Boolean(alert) && count > 0;
 
-        {/* Filter toggles */}
-        <div className="flex gap-2">
-          {([
-            { key: 'all', label: 'All' },
-            { key: 'anomalies', label: 'Anomalies' },
-            { key: 'upcoming', label: 'Upcoming' },
-            { key: 'in_progress', label: 'In Progress' },
-            { key: 'completed', label: 'Completed' },
-          ] as const).map(({ key, label }) => (
-            <Button
-              key={key}
-              variant="ghost"
-              size="sm"
-              onClick={() => setFilter(key)}
-              className={`rounded-full px-4 border transition-all ${filter === key
-                ? 'bg-accent/25 border-accent/70 text-text-primary hover:bg-accent/30 hover:text-text-primary'
-                : 'bg-transparent border-border text-text-secondary hover:bg-surface-hover hover:text-text-primary'
-                }`}
-            >
-              {key === 'anomalies' && <AlertTriangle className="w-3.5 h-3.5 mr-1.5" />}
-              {label}
-            </Button>
-          ))}
+            const tone = isActive
+              ? 'bg-accent-solid border-accent-solid text-accent-on-solid hover:brightness-90'
+              : isAlerting
+                ? 'bg-critical-solid border-critical-solid text-critical-on-solid'
+                : 'bg-surface-alt border-border text-text-secondary hover:bg-surface-hover hover:text-text-primary';
+
+            return (
+              <Button
+                key={key}
+                variant="ghost"
+                size="sm"
+                aria-pressed={isActive}
+                onClick={() => setFilter(key)}
+                className={`rounded-full h-auto px-3 py-1 border transition-colors gap-1.5 ${tone}`}
+              >
+                {isAlerting && <AlertTriangle className="w-3.5 h-3.5" />}
+                <span className="text-[11px] font-semibold tracking-wide uppercase">
+                  {FILTER_LABELS[key]}
+                </span>
+                <span className="text-sm font-semibold tabular-nums">{count}</span>
+              </Button>
+            );
+          })}
         </div>
       </div>
 
       {/* Session list */}
       {loading ? (
-        <div className="space-y-3">
+        <div className="space-y-2">
           {Array.from({ length: SKELETON_CARD_COUNT }, (_, i) => (
-            <div key={i} className="bg-surface border border-border rounded-lg p-4 space-y-3">
+            <div key={i} className="surface-panel rounded-xl px-4 py-2.5 space-y-2">
               <div className="flex items-center gap-3">
                 <Skeleton className="h-4 w-32 bg-surface-alt" />
                 <Skeleton className="h-5 w-20 rounded-full bg-surface-alt" />
@@ -136,15 +142,25 @@ export default function TodaySchedule() {
         </div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-16 space-y-3">
-          <Loader2 className="w-10 h-10 text-text-muted mx-auto opacity-40" />
+          <CalendarOff className="w-10 h-10 text-text-muted mx-auto opacity-40" />
           <p className="text-text-muted text-sm">
             {filter === 'all'
               ? 'No sessions scheduled for today.'
-              : `No sessions matching "${filter.replace('_', ' ')}" filter.`}
+              : `No ${FILTER_LABELS[filter].toLowerCase()} sessions today.`}
           </p>
+          {filter !== 'all' && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setFilter('all')}
+              className="rounded-full px-4 border border-border text-text-secondary hover:bg-surface-hover hover:text-text-primary"
+            >
+              Show all sessions
+            </Button>
+          )}
         </div>
       ) : (
-        <div className="space-y-4 flex flex-col relative w-full">
+        <div className="space-y-2 flex flex-col relative w-full">
           {filtered.map((session, index) => (
             <SessionCard
               key={session._id}
@@ -153,6 +169,7 @@ export default function TodaySchedule() {
               isFirst={index === 0}
               isLast={index === filtered.length - 1}
               isMoving={movingSessionId === session._id}
+              canReorder={canReorder}
               onMoveUp={() => handleMoveUp(session._id, index)}
               onMoveDown={() => handleMoveDown(session._id, index)}
               onPatientUpdated={updatePatientInSession}

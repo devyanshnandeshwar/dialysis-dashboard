@@ -43,7 +43,7 @@ function SessionHistoryRow({ session }: { session: DialysisSession }) {
             <Weight className="w-3.5 h-3.5 opacity-80" /> WEIGHT
           </div>
           <div className="text-sm font-medium text-text-primary">
-            {isNotStarted ? '—' : `${session.preWeight ?? '-'} → ${session.postWeight ?? '-'}`}
+            {isNotStarted ? '--' : `${session.preWeight ?? '--'} → ${session.postWeight ?? '--'}`}
           </div>
         </div>
 
@@ -53,7 +53,7 @@ function SessionHistoryRow({ session }: { session: DialysisSession }) {
             <HeartPulse className="w-3.5 h-3.5 opacity-80" /> BP
           </div>
           <div className="text-sm font-medium text-text-primary">
-            {isNotStarted ? '—' : `${session.preBloodPressure ? `${session.preBloodPressure.systolic}/${session.preBloodPressure.diastolic}` : '-'} → ${session.postBloodPressure ? `${session.postBloodPressure.systolic}/${session.postBloodPressure.diastolic}` : '-'}`}
+            {isNotStarted ? '--' : `${session.preBloodPressure ? `${session.preBloodPressure.systolic}/${session.preBloodPressure.diastolic}` : '--'} → ${session.postBloodPressure ? `${session.postBloodPressure.systolic}/${session.postBloodPressure.diastolic}` : '--'}`}
           </div>
         </div>
 
@@ -63,7 +63,7 @@ function SessionHistoryRow({ session }: { session: DialysisSession }) {
             <Clock className="w-3.5 h-3.5 opacity-80" /> DURATION
           </div>
           <div className="text-sm font-medium text-text-primary">
-            {isNotStarted ? '—' : `${session.sessionDurationMinutes ?? '-'}m`}
+            {isNotStarted ? '--' : `${session.sessionDurationMinutes ?? '--'}m`}
           </div>
         </div>
 
@@ -74,7 +74,7 @@ function SessionHistoryRow({ session }: { session: DialysisSession }) {
             size="icon"
             aria-label="Expand session details"
             onClick={() => setExpanded(!expanded)}
-            className="text-text-muted hover:text-accent hover:bg-surface-hover w-8 h-8 shrink-0 rounded-md"
+            className="text-text-muted hover:text-text-primary hover:bg-surface-hover w-8 h-8 shrink-0 rounded-md"
           >
             {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </Button>
@@ -86,7 +86,7 @@ function SessionHistoryRow({ session }: { session: DialysisSession }) {
         {session.anomalies.length > 0 ? (
           <div className="flex gap-2 flex-wrap">
             {session.anomalies.map((anom, i) => (
-              <div key={i} className={`text-[10px] tracking-wide font-bold px-2 py-0.5 rounded-full border ${anom.severity === 'critical' ? 'bg-critical-bg text-text-primary border-[rgba(240,79,79,0.3)]' : 'bg-warning-bg text-text-primary border-[rgba(240,165,0,0.3)]'}`} title={anom.message}>
+              <div key={i} className={`text-[10px] tracking-wide font-bold px-2 py-0.5 rounded-full border ${anom.severity === 'critical' ? 'bg-critical-solid text-critical-on-solid border-transparent' : 'bg-warning-solid text-warning-on-solid border-transparent'}`} title={anom.message}>
                 {anom.type.replace(/_/g, ' ')}
               </div>
             ))}
@@ -155,13 +155,13 @@ export default function PatientHistoryModal({ patient, triggerClassName }: Patie
         <Button
           size="sm"
           variant="ghost"
-          className={`h-8 px-3 text-text-muted hover:text-accent hover:bg-surface-hover border border-transparent hover:border-border transition-all ${triggerClassName ?? ''}`}
+          className={`h-8 px-3 text-text-muted hover:text-text-primary hover:bg-surface-hover border border-transparent hover:border-border transition-all ${triggerClassName ?? ''}`}
         >
           <History className="w-3.5 h-3.5 mr-1" /> History
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="max-w-3xl w-full min-h-0 bg-surface border-border shadow-2xl text-text-primary p-0 overflow-hidden flex flex-col">
+      <DialogContent className="max-w-3xl w-full min-h-0 text-text-primary p-0 overflow-hidden flex flex-col">
         <DialogHeader className="px-6 py-4 border-b border-border-subtle bg-surface-alt/40 shrink-0">
           <DialogTitle className="text-text-primary flex items-end gap-3 text-lg font-bold">
             {patient.name}
@@ -183,7 +183,7 @@ export default function PatientHistoryModal({ patient, triggerClassName }: Patie
 
           {loading && (
             <div className="flex justify-center py-4">
-              <Loader2 className="w-6 h-6 text-accent animate-spin opacity-50" />
+              <Loader2 className="w-6 h-6 text-text-secondary animate-spin opacity-50" />
             </div>
           )}
 

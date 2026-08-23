@@ -23,6 +23,8 @@ export interface Patient {
   dryWeight: number;
   dateOfBirth?: string;
   primaryDiagnosis?: string;
+  gender?: 'Male' | 'Female' | 'Other';
+  phoneNumber?: string;
   createdAt: string;
   updatedAt: string;
   totalSessions?: number;

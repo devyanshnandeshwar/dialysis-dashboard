@@ -54,7 +54,7 @@ export default function CompleteSessionModal({
     };
 
     const fieldClass =
-        'bg-bg border-border text-text-primary text-sm placeholder:text-text-muted focus-visible:border-accent focus-visible:ring-1 focus-visible:ring-accent-glow h-9';
+        'bg-bg border-border text-text-primary text-sm placeholder:text-text-muted focus-visible:border-accent-edge h-9';
 
     const validate = () => {
         const nextErrors: Record<string, string> = {};
@@ -95,7 +95,7 @@ export default function CompleteSessionModal({
                 toast.error(`${updated.anomalies.length} anomalies detected`);
                 updated.anomalies.forEach((anomaly) => toast.error(anomaly.message));
             } else {
-                toast.success('Session completed — no anomalies');
+                toast.success('Session completed, no anomalies');
             }
 
             await getMachines();
@@ -112,23 +112,25 @@ export default function CompleteSessionModal({
     return (
         <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
-                <Button size="sm" className="bg-accent text-white hover:brightness-110 w-full h-10 px-4 rounded-lg shadow-sm whitespace-nowrap font-semibold">
-                    <span className="hidden sm:inline">Complete Session</span>
-                    <span className="sm:hidden">Complete</span>
+                {/* `w-full` here was sized for the old fixed-width action panel.
+                    In the flex action row it grew and pushed the edit and expand
+                    controls out of the card entirely. */}
+                <Button size="sm" className="h-8 whitespace-nowrap bg-accent-solid text-accent-on-solid hover:brightness-90">
+                    Complete
                 </Button>
             </DialogTrigger>
 
-            <DialogContent className="bg-surface border-border shadow-2xl text-text-primary max-w-lg max-h-[85vh] overflow-y-auto p-0">
+            <DialogContent className="text-text-primary max-w-lg max-h-[85vh] overflow-y-auto p-0">
                 <DialogHeader className="px-6 py-4 border-b border-border-subtle bg-surface-alt/40">
                     <DialogTitle className="text-text-primary text-lg font-bold">
-                        Complete Session — {patient.name}
+                        Complete session: {patient.name}
                     </DialogTitle>
                 </DialogHeader>
 
                 <div className="space-y-4 px-6 py-4">
-                    <div className="rounded-lg border border-border-subtle bg-surface-alt/30 p-3 text-sm space-y-1.5">
-                        <p className="text-text-secondary">Pre-weight: <span className="text-text-primary font-medium">{session.preWeight ?? '—'} kg</span></p>
-                        <p className="text-text-secondary">Pre-BP: <span className="text-text-primary font-medium">{session.preBloodPressure ? `${session.preBloodPressure.systolic}/${session.preBloodPressure.diastolic}` : '—'} mmHg</span></p>
+                    <div className="rounded-xl border border-border-subtle bg-surface-alt/30 p-3 text-sm space-y-1.5">
+                        <p className="text-text-secondary">Pre-weight: <span className="text-text-primary font-medium">{session.preWeight ?? '--'} kg</span></p>
+                        <p className="text-text-secondary">Pre-BP: <span className="text-text-primary font-medium">{session.preBloodPressure ? `${session.preBloodPressure.systolic}/${session.preBloodPressure.diastolic}` : '--'} mmHg</span></p>
                         <p className="text-text-secondary">Target Duration: <span className="text-text-primary font-medium">{session.targetDurationMinutes} min</span></p>
                     </div>
 
@@ -141,7 +143,7 @@ export default function CompleteSessionModal({
                             onChange={(e) => setPostWeight(e.target.value)}
                             className={fieldClass}
                         />
-                        {errors.postWeight && <p className="text-xs text-critical">{errors.postWeight}</p>}
+                        {errors.postWeight && <p className="text-xs text-critical-fg">{errors.postWeight}</p>}
                     </div>
 
                     <div className="space-y-1.5">
@@ -152,7 +154,7 @@ export default function CompleteSessionModal({
                             onChange={(e) => setPostBpSystolic(e.target.value)}
                             className={fieldClass}
                         />
-                        {errors.postBpSystolic && <p className="text-xs text-critical">{errors.postBpSystolic}</p>}
+                        {errors.postBpSystolic && <p className="text-xs text-critical-fg">{errors.postBpSystolic}</p>}
                     </div>
 
                     <div className="space-y-1.5">
@@ -163,7 +165,7 @@ export default function CompleteSessionModal({
                             onChange={(e) => setPostBpDiastolic(e.target.value)}
                             className={fieldClass}
                         />
-                        {errors.postBpDiastolic && <p className="text-xs text-critical">{errors.postBpDiastolic}</p>}
+                        {errors.postBpDiastolic && <p className="text-xs text-critical-fg">{errors.postBpDiastolic}</p>}
                     </div>
 
                     <div className="space-y-1.5">
@@ -175,7 +177,7 @@ export default function CompleteSessionModal({
                             placeholder={`Target was ${session.targetDurationMinutes} min`}
                             className={fieldClass}
                         />
-                        {errors.sessionDurationMinutes && <p className="text-xs text-critical">{errors.sessionDurationMinutes}</p>}
+                        {errors.sessionDurationMinutes && <p className="text-xs text-critical-fg">{errors.sessionDurationMinutes}</p>}
                     </div>
 
                     <div className="space-y-1.5">
@@ -192,7 +194,7 @@ export default function CompleteSessionModal({
                     <Button
                         onClick={handleSubmit}
                         disabled={submitting}
-                        className="w-full bg-accent text-white hover:brightness-110 shadow-md font-semibold text-sm mt-2 mb-2"
+                        className="w-full bg-accent-solid text-accent-on-solid hover:brightness-90 font-semibold text-sm mt-2 mb-2"
                     >
                         {submitting ? (
                             <>
